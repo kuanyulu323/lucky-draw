@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>⚔️ 謀定天下 · 抽獎系統</title>
+    <title>🌺 彼岸花抽獎系統</title>
     <style>
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -28,53 +28,64 @@
 
         body {
             font-family: 'PingFang TC','Noto Sans TC','Microsoft JhengHei',sans-serif;
-            background: var(--bg);
+            /* 三國感：左下暗紅、右上金 */
+            background:
+                radial-gradient(ellipse at 10% 100%, rgba(155,26,42,.09) 0%, transparent 48%),
+                radial-gradient(ellipse at 90%   0%, rgba(201,151,58,.06) 0%, transparent 48%),
+                var(--bg);
             color: var(--text);
             display: flex;
             flex-direction: column;
         }
 
+        /* ─── 三國裝飾：角落扣飾 ─── */
+        .sc {
+            position: absolute;
+            width: 16px; height: 16px;
+            border-color: var(--gold);
+            border-style: solid;
+            opacity: .45;
+            z-index: 25;
+            pointer-events: none;
+        }
+        .sc-tl { top: 10px;    left: 10px;  border-width: 2px 0 0 2px; }
+        .sc-tr { top: 10px;    right: 10px; border-width: 2px 2px 0 0; }
+        .sc-bl { bottom: 10px; left: 10px;  border-width: 0 0 2px 2px; }
+        .sc-br { bottom: 10px; right: 10px; border-width: 0 2px 2px 0; }
+
         /* ─── Header ─── */
         header {
             flex-shrink: 0;
-            background: var(--bg-panel);
+            background: linear-gradient(180deg, #0f1018 0%, var(--bg-panel) 100%);
             border-bottom: 1px solid var(--border);
-            padding: 13px 28px;
+            padding: 15px 28px;
             display: flex;
             align-items: center;
-            justify-content: space-between;
+            justify-content: center;
+            position: relative;
+        }
+        /* 底部金色流光線 */
+        header::after {
+            content: '';
+            position: absolute;
+            bottom: 0; left: 0; right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, transparent 0%, var(--gold) 30%, var(--gold-light) 50%, var(--gold) 70%, transparent 100%);
+            opacity: .55;
         }
         .hdr-title {
-            font-size: 19px;
+            font-size: 22px;
             font-weight: 900;
             color: var(--gold-light);
-            letter-spacing: 5px;
-            text-shadow: 0 0 18px var(--gold-glow);
-        }
-        .hdr-sub { font-size: 11px; color: var(--text-sub); letter-spacing: 3px; margin-top: 3px; }
-        .hdr-live {
+            letter-spacing: 8px;
+            text-shadow: 0 0 22px var(--gold-glow), 0 0 4px rgba(240,192,96,.2);
             display: flex;
             align-items: center;
-            gap: 8px;
-            background: rgba(212,42,58,.1);
-            border: 1px solid rgba(212,42,58,.3);
-            color: var(--crimson-lit);
-            padding: 6px 16px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: 700;
-            letter-spacing: 2px;
+            gap: 14px;
         }
-        .live-dot {
-            width: 7px; height: 7px;
-            background: var(--crimson-lit);
-            border-radius: 50%;
-            animation: blink 1.2s ease-in-out infinite;
-        }
-        @keyframes blink {
-            0%, 100% { opacity: 1; }
-            50%       { opacity: .15; }
-        }
+        /* 左右裝飾符 */
+        .hdr-title::before { content: '◈'; color: var(--gold); opacity: .65; font-size: 15px; }
+        .hdr-title::after  { content: '◈'; color: var(--gold); opacity: .65; font-size: 15px; }
 
         /* ─── Layout ─── */
         .app { flex: 1; display: flex; overflow: hidden; }
@@ -250,13 +261,17 @@
             background: var(--bg-inset);
             border: 2px solid var(--border-hi);
             border-radius: 18px;
-            overflow: hidden;
+            overflow: visible; /* allow corner ornaments to poke out */
             position: relative;
-            /* subtle gold top accent */
             box-shadow: 0 0 0 1px rgba(201,151,58,.06), inset 0 0 40px rgba(0,0,0,.5);
         }
+        /* inner overflow clip */
+        .slot-machine-outer {
+            border-radius: 18px;
+            overflow: hidden;
+        }
         /* animated gold top line */
-        .slot-wrap::before {
+        .slot-machine-outer::before {
             content: '';
             position: absolute;
             top: 0; left: 0; right: 0;
@@ -523,14 +538,7 @@
 <body>
 
 <header>
-    <div>
-        <div class="hdr-title">⚔️ 謀定天下 · 盟友抽獎</div>
-        <div class="hdr-sub">三國：謀定天下 · 內部抽獎系統</div>
-    </div>
-    <div class="hdr-live">
-        <div class="live-dot"></div>
-        DC 直播中
-    </div>
+    <div class="hdr-title">🌺 彼岸花抽獎系統</div>
 </header>
 
 <div class="app">
@@ -560,6 +568,12 @@
         <div class="prize-selector" id="prizeTabs"></div>
 
         <div class="slot-wrap">
+            <!-- 三國角落扣飾 -->
+            <span class="sc sc-tl"></span>
+            <span class="sc sc-tr"></span>
+            <span class="sc sc-bl"></span>
+            <span class="sc sc-br"></span>
+            <div class="slot-machine-outer">
             <div class="slot-machine">
                 <div class="slot-center-bar"></div>
                 <div class="slot-state" id="slotReady">READY</div>
@@ -569,6 +583,7 @@
                     <div class="winner-label">🎉 恭喜中獎</div>
                     <div class="winner-name-text" id="winnerNameText"></div>
                 </div>
+            </div>
             </div>
         </div>
 
@@ -705,7 +720,25 @@ function removePrizeRow(btn) {
 
 // ─── Prize Tabs ──────────────────────────────────────────────
 function syncPrizeTabs() {
-    // Rebuild inventory (merge duplicates)
+    // ── Step 1: Merge duplicate settings rows (silent) ─────────
+    const seen = {};
+    document.querySelectorAll('.prize-row').forEach(row => {
+        const nameEl = row.querySelector('.pr-name');
+        const qtyEl  = row.querySelector('.pr-qty');
+        const name   = nameEl.value.trim();
+        const qty    = parseInt(qtyEl.value) || 0;
+        if (!name) return;
+        if (seen[name]) {
+            seen[name].total += qty;
+            row.remove(); // remove duplicate row
+        } else {
+            seen[name] = { qtyEl, total: qty };
+        }
+    });
+    // Sync merged quantities back to the surviving rows
+    Object.values(seen).forEach(({ qtyEl, total }) => { qtyEl.value = total; });
+
+    // ── Step 2: Rebuild inventory ───────────────────────────────
     const inv = {};
     document.querySelectorAll('.prize-row').forEach(row => {
         const name = row.querySelector('.pr-name').value.trim();
@@ -803,51 +836,72 @@ function startDraw() {
 function runSlotMachine(names, winner, onComplete) {
     const ITEM_H    = 72;
     const MACHINE_H = 360;
-    const CENTER_Y  = MACHINE_H / 2 - ITEM_H / 2; // 144px — offset for item[0] to be centered
+    const CENTER_Y  = MACHINE_H / 2 - ITEM_H / 2; // 144px
 
-    // Build scroll sequence
+    // Build sequence: many random rounds…
     const minItems = 55;
     const rounds   = Math.max(4, Math.ceil(minItems / names.length));
     const seq      = [];
     for (let r = 0; r < rounds; r++) {
         seq.push(...[...names].sort(() => Math.random() - 0.5));
     }
-    seq.push(winner); // winner is always the last item
+
+    // Winner goes HERE (not at the absolute end)
+    const winnerAt = seq.length;
+    seq.push(winner);
+
+    // Pad with 4–8 random extra items AFTER winner.
+    // This hides the "end" of the reel from viewers, so they can't
+    // count down and predict who wins before the machine stops.
+    const tail = 4 + Math.floor(Math.random() * 5);
+    for (let i = 0; i < tail; i++) {
+        seq.push(names[Math.floor(Math.random() * names.length)]);
+    }
 
     // Render strip
     const strip = document.getElementById('slotStrip');
-    strip.style.transform = `translateY(${CENTER_Y}px)`;
+    strip.style.transition = '';
+    strip.style.transform  = `translateY(${CENTER_Y}px)`;
     strip.innerHTML = seq.map(n => `<div class="slot-item">${esc(n)}</div>`).join('');
 
-    // Switch to strip view
     document.getElementById('slotReady').style.display    = 'none';
     document.getElementById('winnerDisplay').style.display = 'none';
     strip.style.display = 'block';
 
-    // Scroll animation
-    let idx     = 0;
-    let speed   = 38;
-    const endIdx = seq.length - 1;
+    let idx   = 0;
+    let speed = 38;
 
     function step() {
         strip.style.transform = `translateY(${CENTER_Y - idx * ITEM_H}px)`;
 
-        if (idx >= endIdx) {
-            // Winner is centered — pause then reveal
+        if (idx >= winnerAt) {
+            // Winner is centered — gentle settle bounce, then reveal
+            const winY = CENTER_Y - winnerAt * ITEM_H;
             setTimeout(() => {
-                strip.style.display = 'none';
-                revealWinner(winner);
-                onComplete();
-            }, 650);
+                strip.style.transition = 'transform 0.13s ease-out';
+                strip.style.transform  = `translateY(${winY - 9}px)`;      // overshoot up
+                setTimeout(() => {
+                    strip.style.transform = `translateY(${winY + 3}px)`;   // slight rebound
+                    setTimeout(() => {
+                        strip.style.transform = `translateY(${winY}px)`;   // settle
+                        setTimeout(() => {
+                            strip.style.transition = '';
+                            strip.style.display = 'none';
+                            revealWinner(winner);
+                            onComplete();
+                        }, 280);
+                    }, 130);
+                }, 160);
+            }, 180);
             return;
         }
 
         idx++;
-        const progress = idx / endIdx;
-        // Keep fast for first 62%, then ease out with cubic curve
-        speed = progress < 0.62
+        // Speed curve: full speed for first 65%, then exponential ease-out
+        const progress = idx / winnerAt;
+        speed = progress < 0.65
             ? 38
-            : 38 + Math.pow((progress - 0.62) / 0.38, 2.8) * 580;
+            : 38 + Math.pow((progress - 0.65) / 0.35, 2.6) * 560;
 
         setTimeout(step, speed);
     }
