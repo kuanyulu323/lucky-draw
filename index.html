@@ -1748,6 +1748,8 @@ function showDecreeThenRedraw(winner, winnerIdx, onRedraw) {
     }
 
     // Decrement prize display (non-blind only; blind prize not yet resolved)
+    // Save selectedPrize now — syncPrizeTabs() clears it when count hits 0
+    const savedSelectedPrize = selectedPrize;
     let decrementedPrize = null;
     if (selectedPrize && selectedPrize !== BLIND_KEY && prizeInventory[selectedPrize] > 0) {
         decrementedPrize = selectedPrize;
@@ -1757,7 +1759,7 @@ function showDecreeThenRedraw(winner, winnerIdx, onRedraw) {
                 row.querySelector('.pr-qty').value = prizeInventory[decrementedPrize];
             }
         });
-        syncPrizeTabs();
+        syncPrizeTabs(); // may clear selectedPrize if count→0; that's fine visually
     }
 
     // 3~5 second pause — let chat celebrate
@@ -1802,6 +1804,8 @@ function showDecreeThenRedraw(winner, winnerIdx, onRedraw) {
                             row.querySelector('.pr-qty').value = prizeInventory[decrementedPrize];
                         }
                     });
+                    // Restore selectedPrize before syncPrizeTabs so it isn't cleared again
+                    selectedPrize = savedSelectedPrize;
                     syncPrizeTabs();
                 }
 
