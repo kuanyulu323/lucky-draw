@@ -224,11 +224,87 @@
         }
         .btn-del:hover { color: var(--crimson-lit); border-color: rgba(212,42,58,.4); }
         .btn-blind {
-            background:none; border:1px solid var(--border); color:var(--text-sub);
-            border-radius:6px; padding:5px 7px; font-size:13px; cursor:pointer; flex-shrink:0;
-            transition:all .2s;
+            display: none; /* kept for snapshot compat, hidden from UI */
         }
-        .btn-blind.active { border-color:rgba(201,151,58,.5); color:var(--gold); background:rgba(201,151,58,.1); }
+
+        /* ─── Blind Box Config Section ─── */
+        .blind-config {
+            margin-top:8px; border:1px solid var(--border-hi);
+            border-radius:8px; overflow:hidden; background:rgba(14,17,28,.4);
+        }
+        .blind-cfg-header {
+            display:flex; align-items:center; justify-content:space-between;
+            padding:7px 12px; cursor:pointer; user-select:none;
+            font-size:12px; color:var(--text-sub); transition:color .2s;
+        }
+        .blind-cfg-header:hover { color:var(--gold); }
+        .blind-cfg-arrow { font-size:10px; transition:transform .25s; }
+        .blind-cfg-header.open .blind-cfg-arrow { transform:rotate(90deg); }
+        .blind-cfg-body { display:none; padding:8px 12px 10px; border-top:1px solid var(--border); }
+        .blind-cfg-body.open { display:block; }
+        .blind-check-row {
+            display:flex; align-items:center; gap:8px;
+            padding:5px 0; cursor:pointer; font-size:13px; color:var(--text);
+        }
+        .blind-check-row input[type="checkbox"] { accent-color:var(--gold); width:14px; height:14px; cursor:pointer; }
+        .blind-cfg-empty { color:var(--text-sub); font-size:12px; text-align:center; padding:6px 0; }
+
+        /* ─── Blind Open Button (inside winner display) ─── */
+        .blind-open-btn {
+            margin-top:10px;
+            background:linear-gradient(135deg,rgba(155,26,42,.5),rgba(201,151,58,.25));
+            border:1px solid rgba(201,151,58,.5); border-radius:8px;
+            color:var(--gold-light); font-family:inherit; font-size:15px; font-weight:700;
+            padding:10px 28px; cursor:pointer;
+            animation:blindPulse 1.6s ease-in-out infinite; transition:background .2s;
+        }
+        .blind-open-btn:hover { background:linear-gradient(135deg,rgba(155,26,42,.75),rgba(201,151,58,.4)); }
+        @keyframes blindPulse {
+            0%,100%{box-shadow:0 0 10px rgba(201,151,58,.3);}
+            50%{box-shadow:0 0 28px rgba(201,151,58,.65),0 0 60px rgba(201,151,58,.2);}
+        }
+
+        /* ─── Blind Box Slot Overlay ─── */
+        .blind-overlay {
+            position:fixed; inset:0; background:rgba(0,0,0,.82);
+            z-index:2000; display:flex; align-items:center; justify-content:center;
+            backdrop-filter:blur(8px);
+        }
+        .blind-box {
+            background:#0b0d13; border:1px solid rgba(201,151,58,.4);
+            border-radius:16px; width:min(360px,90vw);
+            padding:28px 24px; text-align:center; position:relative;
+        }
+        .blind-box-title {
+            font-family:'Noto Serif TC',serif; font-size:14px;
+            color:var(--text-sub); margin-bottom:20px; letter-spacing:.05em;
+        }
+        .blind-slot-wrap {
+            height:72px; overflow:hidden; border:1px solid rgba(201,151,58,.3);
+            border-radius:8px; background:rgba(201,151,58,.04);
+            position:relative; margin-bottom:20px;
+        }
+        .blind-slot-bar {
+            position:absolute; top:50%; left:0; right:0; height:2px;
+            background:linear-gradient(90deg,transparent,var(--gold),transparent);
+            transform:translateY(-50%); z-index:2; opacity:.55; pointer-events:none;
+        }
+        .blind-slot-strip { position:absolute; width:100%; will-change:transform; }
+        .blind-slot-item {
+            height:72px; display:flex; align-items:center; justify-content:center;
+            font-family:'Noto Serif TC',serif; font-size:18px; font-weight:700; color:var(--gold-light);
+        }
+        .blind-result-name {
+            font-family:'Noto Serif TC',serif; font-size:30px; font-weight:900;
+            color:var(--gold-light); animation:winPop .5s ease-out; margin-bottom:16px;
+            text-shadow:0 0 30px var(--gold-light),0 0 70px var(--gold-glow);
+        }
+        .blind-confirm-btn {
+            background:none; border:1px solid var(--border-hi);
+            color:var(--text-sub); font-family:inherit; font-size:13px;
+            padding:7px 22px; border-radius:6px; cursor:pointer; transition:all .2s;
+        }
+        .blind-confirm-btn:hover { color:var(--gold); border-color:rgba(201,151,58,.4); }
 
         .btn-ghost {
             background: transparent;
@@ -513,28 +589,6 @@
             text-shadow: 0 0 30px var(--crimson-lit), 0 0 80px var(--crimson-glow);
         }
         #winnerPrizeReveal { min-height: 58px; }
-        .flip-reveal {
-            perspective:600px; margin-top:10px;
-        }
-        .flip-card {
-            width:180px; height:48px; position:relative;
-            transform-style:preserve-3d; transition:transform .7s;
-        }
-        .flip-card.flipped { transform:rotateY(180deg); }
-        .flip-front,.flip-back {
-            position:absolute; inset:0; border-radius:8px;
-            display:flex; align-items:center; justify-content:center;
-            backface-visibility:hidden; font-size:15px; font-weight:700;
-        }
-        .flip-front {
-            background:rgba(155,26,42,.3); border:1px solid rgba(212,42,58,.4);
-            color:var(--crimson-lit); cursor:pointer;
-        }
-        button.flip-front { width:100%; font-family:inherit; }
-        .flip-back {
-            background:rgba(201,151,58,.12); border:1px solid rgba(201,151,58,.4);
-            color:var(--gold-light); transform:rotateY(180deg);
-        }
         /* particle container */
         #winnerDisplay .particles {
             position: absolute;
@@ -869,6 +923,15 @@
             <div class="sec-lbl">🎁 獎項設定</div>
             <div id="prizeRows"></div>
             <button class="btn-ghost">＋ 新增獎項</button>
+            <div class="blind-config" id="blindConfig">
+                <div class="blind-cfg-header" id="blindCfgHeader">
+                    🎰 盲盒設定
+                    <span class="blind-cfg-arrow">▶</span>
+                </div>
+                <div class="blind-cfg-body" id="blindCfgBody">
+                    <div class="blind-cfg-empty">請先新增獎項</div>
+                </div>
+            </div>
         </div>
 
         <div class="setting-row">
@@ -960,7 +1023,8 @@ const KEYS = {
     selected: 'bh_selected',
     autoRemove: 'bh_autoremove',
     opLog: 'bh_oplog',
-    batch: 'bh_batch'
+    batch: 'bh_batch',
+    blind: 'bh_blind'
 };
 
 // ─── State ───────────────────────────────────────────────────
@@ -985,7 +1049,7 @@ function init() {
     loadCache();
 
     document.getElementById('namesInput').addEventListener('input', onNameInput);
-    document.querySelector('.btn-ghost').addEventListener('click', () => addPrize('', 1, false));
+    document.querySelector('.btn-ghost').addEventListener('click', () => addPrize('', 1));
     document.querySelector('.btn-danger').addEventListener('click', resetAll);
     document.getElementById('drawBtn').addEventListener('click', startDraw);
     document.getElementById('undoBtn').addEventListener('click', undoLastDraw);
@@ -1006,18 +1070,19 @@ function init() {
         if (e.target.id === 'logOverlay') closeLog();
     });
 
+    // Blind config panel toggle
+    document.getElementById('blindCfgHeader').addEventListener('click', () => {
+        const header = document.getElementById('blindCfgHeader');
+        const body = document.getElementById('blindCfgBody');
+        header.classList.toggle('open');
+        body.classList.toggle('open');
+    });
+
     const prizeRowsEl = document.getElementById('prizeRows');
     prizeRowsEl.addEventListener('input', e => {
         if (e.target.matches('.pr-name, .pr-qty')) syncPrizeTabs();
     });
     prizeRowsEl.addEventListener('click', e => {
-        const blindBtn = e.target.closest('.btn-blind');
-        if (blindBtn) {
-            blindBtn.classList.toggle('active');
-            blindBtn.setAttribute('aria-pressed', blindBtn.classList.contains('active') ? 'true' : 'false');
-            syncPrizeTabs();
-            return;
-        }
         const delBtn = e.target.closest('.btn-del');
         if (delBtn) removePrizeRow(delBtn);
     });
@@ -1071,6 +1136,7 @@ function loadCache() {
     const history    = normalizeHistory(parseCacheJSON(KEYS.history, []));
     const savedLog   = normalizeHistory(parseCacheJSON(KEYS.opLog, []));
     const savedBatch = parseInt(localStorage.getItem(KEYS.batch), 10);
+    const savedBlind = parseCacheJSON(KEYS.blind, null);
 
     selectedPrize = localStorage.getItem(KEYS.selected) || "";
     autoRemove = localStorage.getItem(KEYS.autoRemove) !== 'false';
@@ -1083,7 +1149,14 @@ function loadCache() {
 
     const rows = document.getElementById('prizeRows');
     rows.innerHTML = "";
-    (prizes.length ? prizes : [{ name: "", qty: 1, blind: false }]).forEach(p => addPrizeRow(p.name, p.qty, !!p.blind));
+    (prizes.length ? prizes : [{ name: "", qty: 1 }]).forEach(p => addPrizeRow(p.name, p.qty));
+
+    // Restore blind prizes: prefer dedicated key, fall back to per-row migration
+    if (Array.isArray(savedBlind)) {
+        blindPrizes = new Set(savedBlind);
+    } else {
+        blindPrizes = new Set(prizes.filter(p => p.blind).map(p => p.name));
+    }
 
     historyData = history;
     opLog = (savedLog.length ? savedLog : historyData).slice();
@@ -1102,6 +1175,7 @@ function saveCache() {
     localStorage.setItem(KEYS.autoRemove, autoRemove ? 'true' : 'false');
     localStorage.setItem(KEYS.opLog, JSON.stringify(opLog));
     localStorage.setItem(KEYS.batch, String(batchCount));
+    localStorage.setItem(KEYS.blind, JSON.stringify([...blindPrizes]));
 }
 
 function saveCacheDebounced() {
@@ -1172,19 +1246,18 @@ function getNames() {
 }
 
 // ─── Prize Rows (settings) ───────────────────────────────────
-function addPrize(name, qty, blind) {
-    addPrizeRow(name, qty, blind);
+function addPrize(name, qty) {
+    addPrizeRow(name, qty);
     syncPrizeTabs();
 }
 
-function addPrizeRow(name = '', qty = 1, blind = false) {
+function addPrizeRow(name = '', qty = 1) {
     const container = document.getElementById('prizeRows');
     const row = document.createElement('div');
     row.className = 'prize-row';
     row.innerHTML = `
         <input class="pr-name" type="text" placeholder="獎項名稱" value="${esc(name)}" aria-label="獎項名稱">
         <input class="pr-qty" type="number" placeholder="數量" min="0" value="${qty}" aria-label="獎項數量">
-        <button class="btn-blind ${blind ? 'active' : ''}" type="button" title="盲盒模式" aria-label="切換盲盒模式" aria-pressed="${blind}">🎁</button>
         <button class="btn-del" type="button" title="移除" aria-label="移除此獎項">✕</button>
     `;
     container.appendChild(row);
@@ -1202,10 +1275,9 @@ function removePrizeRow(btn) {
 function collectPrizeRows() {
     const arr = [];
     document.querySelectorAll('.prize-row').forEach(row => {
-        const name  = row.querySelector('.pr-name').value.trim();
-        const qty   = parseInt(row.querySelector('.pr-qty').value, 10) || 0;
-        const blind = row.querySelector('.btn-blind').classList.contains('active');
-        if (name) arr.push({ name, qty, blind });
+        const name = row.querySelector('.pr-name').value.trim();
+        const qty  = parseInt(row.querySelector('.pr-qty').value, 10) || 0;
+        if (name) arr.push({ name, qty });
     });
     return arr;
 }
@@ -1214,33 +1286,25 @@ function collectPrizeRows() {
 function syncPrizeTabs() {
     const seen = {};
     document.querySelectorAll('.prize-row').forEach(row => {
-        const nameEl   = row.querySelector('.pr-name');
-        const qtyEl    = row.querySelector('.pr-qty');
-        const blindBtn = row.querySelector('.btn-blind');
-        const name     = nameEl.value.trim();
-        const qty      = parseInt(qtyEl.value, 10) || 0;
-        const blind    = blindBtn.classList.contains('active');
+        const nameEl = row.querySelector('.pr-name');
+        const qtyEl  = row.querySelector('.pr-qty');
+        const name   = nameEl.value.trim();
+        const qty    = parseInt(qtyEl.value, 10) || 0;
         if (!name) return;
         if (seen[name]) {
             seen[name].total += qty;
-            seen[name].blind = seen[name].blind || blind;
             row.remove();
         } else {
-            seen[name] = { qtyEl, blindBtn, total: qty, blind };
+            seen[name] = { qtyEl, total: qty };
         }
     });
-    Object.values(seen).forEach(({ qtyEl, blindBtn, total, blind }) => {
-        qtyEl.value = total;
-        blindBtn.classList.toggle('active', blind);
-        blindBtn.setAttribute('aria-pressed', blind ? 'true' : 'false');
-    });
+    Object.values(seen).forEach(({ qtyEl, total }) => { qtyEl.value = total; });
 
     prizeInventory = Object.fromEntries(
         Object.entries(seen).map(([name, meta]) => [name, meta.total])
     );
-    blindPrizes = new Set(
-        Object.entries(seen).filter(([, meta]) => meta.blind).map(([name]) => name)
-    );
+    // Clean up blind prizes that no longer exist
+    blindPrizes = new Set([...blindPrizes].filter(p => prizeInventory[p] !== undefined));
 
     if (selectedPrize && (!prizeInventory[selectedPrize] || prizeInventory[selectedPrize] <= 0)) {
         selectedPrize = '';
@@ -1248,7 +1312,31 @@ function syncPrizeTabs() {
 
     renderTabs();
     updateInfoBar();
+    syncBlindConfig();
     saveCacheDebounced();
+}
+
+function syncBlindConfig() {
+    const body = document.getElementById('blindCfgBody');
+    if (!body) return;
+    const prizes = Object.keys(prizeInventory);
+    if (!prizes.length) {
+        body.innerHTML = '<div class="blind-cfg-empty">請先新增獎項</div>';
+        return;
+    }
+    body.innerHTML = prizes.map(name => `
+        <label class="blind-check-row">
+            <input type="checkbox" class="blind-check" value="${esc(name)}"${blindPrizes.has(name) ? ' checked' : ''}>
+            <span>${esc(name)}</span>
+        </label>
+    `).join('');
+    body.querySelectorAll('.blind-check').forEach(cb => {
+        cb.addEventListener('change', () => {
+            if (cb.checked) blindPrizes.add(cb.value);
+            else blindPrizes.delete(cb.value);
+            saveCacheDebounced();
+        });
+    });
 }
 
 function renderTabs() {
@@ -1594,26 +1682,98 @@ function revealWinner(winner, decoy, prize, onRealShown) {
 
 function renderBlindReveal(historyEntry) {
     const extra = document.getElementById('winnerPrizeReveal');
-    extra.innerHTML = `
-        <div class="flip-reveal">
-            <div class="flip-card">
-                <button class="flip-front" type="button">翻牌揭曉</button>
-                <div class="flip-back">${esc(historyEntry.realPrize)}</div>
+    extra.innerHTML = '';
+    const btn = document.createElement('button');
+    btn.className = 'blind-open-btn';
+    btn.textContent = '🎰 開啟盲盒！';
+    extra.appendChild(btn);
+    btn.addEventListener('click', () => showBlindSlot(historyEntry), { once: true });
+}
+
+function showBlindSlot(historyEntry) {
+    const realPrize = historyEntry.realPrize;
+    // Build prize pool: use all prizes (at least 3 items for drama)
+    const poolBase = Object.keys(prizeInventory);
+    const pool = poolBase.length >= 2 ? poolBase
+        : [...poolBase, ...(poolBase.length ? [] : ['神秘大獎', '限定好物', '幸運獎'])];
+
+    const overlay = document.createElement('div');
+    overlay.className = 'blind-overlay';
+    overlay.innerHTML = `
+        <div class="blind-box">
+            <div class="blind-box-title">🎁 開箱中⋯</div>
+            <div class="blind-slot-wrap">
+                <div class="blind-slot-bar"></div>
+                <div class="blind-slot-strip" id="blindSlotStrip"></div>
             </div>
         </div>
     `;
-    const card = extra.querySelector('.flip-card');
-    const button = extra.querySelector('.flip-front');
-    button.addEventListener('click', () => {
-        if (card.classList.contains('flipped')) return;
-        card.classList.add('flipped');
-        setTimeout(() => {
-            historyEntry.prize = historyEntry.realPrize;
-            renderHistory();
-            renderLog();
-            saveCacheDebounced();
-        }, 700);
-    }, { once: true });
+    document.body.appendChild(overlay);
+
+    const ITEM_H = 72;
+    const bGen = makeBlindGen(pool);
+    const count = 28 + Math.floor(Math.random() * 18);
+    const seq = [];
+    for (let i = 0; i < count; i++) seq.push(bGen(seq[seq.length - 1] || ''));
+    if (seq[seq.length - 1] === realPrize) seq.push(bGen(seq[seq.length - 1]));
+    const stopAt = seq.length;
+    seq.push(realPrize);
+
+    const strip = overlay.querySelector('#blindSlotStrip');
+    strip.innerHTML = seq.map(n => `<div class="blind-slot-item">${esc(n)}</div>`).join('');
+    strip.style.transform = 'translateY(0)';
+
+    let idx = 0;
+    let speed = 28;
+    let lastTime = 0;
+
+    function step(ts) {
+        if (ts - lastTime < speed) { requestAnimationFrame(step); return; }
+        lastTime = ts;
+        strip.style.transform = `translateY(${-idx * ITEM_H}px)`;
+        if (idx >= stopAt) {
+            setTimeout(() => showBlindResult(overlay, realPrize, historyEntry), 420);
+            return;
+        }
+        idx++;
+        const progress = idx / stopAt;
+        speed = progress < 0.6 ? 28 : 28 + Math.pow((progress - 0.6) / 0.4, 2.6) * 480;
+        requestAnimationFrame(step);
+    }
+    requestAnimationFrame(step);
+}
+
+function makeBlindGen(pool) {
+    if (pool.length === 1) return () => pool[0];
+    let cycle = shuffle([...pool]);
+    let pos = 0;
+    return function next(last) {
+        while (true) {
+            if (pos >= cycle.length) {
+                let tries = 0;
+                do { cycle = shuffle([...pool]); tries++; } while (cycle[0] === last && tries < 8);
+                pos = 0;
+            }
+            const c = cycle[pos++];
+            if (c !== last) return c;
+        }
+    };
+}
+
+function showBlindResult(overlay, realPrize, historyEntry) {
+    const box = overlay.querySelector('.blind-box');
+    box.innerHTML = `
+        <div class="blind-box-title">🎉 恭喜獲得</div>
+        <div class="blind-result-name">${esc(realPrize)}</div>
+        <button class="blind-confirm-btn" type="button">收下了 ✓</button>
+    `;
+    historyEntry.prize = historyEntry.realPrize;
+    renderHistory();
+    renderLog();
+    saveCacheDebounced();
+    spawnParticles();
+    box.querySelector('.blind-confirm-btn').addEventListener('click', () => overlay.remove(), { once: true });
+    overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
 }
 
 function spawnParticles() {
@@ -1684,6 +1844,7 @@ function currentSnapshot() {
     return {
         names: document.getElementById('namesInput').value,
         prizeRows: collectPrizeRows(),
+        blindPrizes: [...blindPrizes],
         selectedPrize,
         historyData: JSON.parse(JSON.stringify(historyData))
     };
@@ -1703,9 +1864,10 @@ function restoreSnapshot(snap) {
 
     const rows = document.getElementById('prizeRows');
     rows.innerHTML = '';
-    (snap.prizeRows.length ? snap.prizeRows : [{ name: '', qty: 1, blind: false }]).forEach(row => {
-        addPrizeRow(row.name, row.qty, !!row.blind);
+    (snap.prizeRows.length ? snap.prizeRows : [{ name: '', qty: 1 }]).forEach(row => {
+        addPrizeRow(row.name, row.qty);
     });
+    blindPrizes = new Set(snap.blindPrizes || []);
 
     historyData = JSON.parse(JSON.stringify(snap.historyData || []));
     opLog = historyData.slice();
