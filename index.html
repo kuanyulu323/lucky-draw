@@ -1566,14 +1566,19 @@ function startDraw() {
 }
 
 // allowSpecial=false on re-draws triggered by fake decree to prevent infinite loop
-function runBatchDraw(remaining, allowSpecial = true) {
+// excludeName: temporarily exclude the fake winner so they can't win again immediately
+function runBatchDraw(remaining, allowSpecial = true, excludeName = null) {
     if (remaining === 0) {
         setDrawingState(false);
         setTimeout(resetStage, 2500);
         return;
     }
 
-    const names = [...new Set(getNames())];
+    let names = [...new Set(getNames())];
+    // Exclude fake decree winner from this re-draw (but keep them in name list)
+    if (excludeName && names.length > 1) {
+        names = names.filter(n => n !== excludeName);
+    }
     if (!names.length) {
         setDrawingState(false);
         showToast('名單是空的！');
@@ -1599,8 +1604,8 @@ function runBatchDraw(remaining, allowSpecial = true) {
 
     runSlotMachine(names, winner, decoy, () => {
         if (fakeDecree) {
-            showDecreeThenRedraw(winner, winnerIdx, () => {
-                runBatchDraw(remaining, false); // disable special effects for this re-draw
+            showDecreeThenRedraw(winner, winnerIdx, (fakeWinner) => {
+                runBatchDraw(remaining, false, fakeWinner); // exclude fake winner from re-draw
             });
         } else {
             finalizeWinner(names, winnerIdx, winner, decoy, () => {
@@ -1800,7 +1805,10 @@ function showDecreeThenRedraw(winner, winnerIdx, onRedraw) {
             setTimeout(() => {
                 stamp.remove();
 
-                // Restore history entry
+                // 1. resetStage first — audience attention shifts to "候 靜候抽獎"
+                resetStage();
+
+                // 2. Silently restore all fake data while audience watches stage reset
                 const hIdx = historyData.indexOf(tempEntry);
                 if (hIdx !== -1) historyData.splice(hIdx, 1);
                 const lIdx = opLog.indexOf(tempEntry);
@@ -1808,7 +1816,6 @@ function showDecreeThenRedraw(winner, winnerIdx, onRedraw) {
                 renderHistory();
                 renderLog();
 
-                // Restore name
                 if (removedName !== null) {
                     const current = getNames();
                     current.push(removedName);
@@ -1816,7 +1823,6 @@ function showDecreeThenRedraw(winner, winnerIdx, onRedraw) {
                     updateNameCount(ta.value);
                 }
 
-                // Restore prize count
                 if (decrementedPrize !== null) {
                     prizeInventory[decrementedPrize]++;
                     document.querySelectorAll('.prize-row').forEach(row => {
@@ -1824,13 +1830,14 @@ function showDecreeThenRedraw(winner, winnerIdx, onRedraw) {
                             row.querySelector('.pr-qty').value = prizeInventory[decrementedPrize];
                         }
                     });
-                    // Restore selectedPrize before syncPrizeTabs so it isn't cleared again
                     selectedPrize = savedSelectedPrize;
                     syncPrizeTabs();
                 }
 
-                resetStage();
-                if (typeof onRedraw === 'function') onRedraw();
+                // 3. 1.2s pause so host can react before re-draw starts
+                setTimeout(() => {
+                    if (typeof onRedraw === 'function') onRedraw(winner);
+                }, 1200);
             }, 500);
         }, 1800);
     }, pause);
