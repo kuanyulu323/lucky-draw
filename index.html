@@ -1837,26 +1837,30 @@ function finalizeWinner(names, winnerIdx, winner, decoy, onFinished) {
     }
 
     prizeInventory[prize]--;
-    document.querySelectorAll('.prize-row').forEach(row => {
-        if (row.querySelector('.pr-name').value.trim() === prize) {
-            row.querySelector('.pr-qty').value = prizeInventory[prize];
-        }
-    });
-
-    // Auto-clear selection when exhausted (state only, UI refresh handled below)
-    if (prizeSel === BLIND_KEY) {
-        if (getBlindPoolTotal() <= 0) selectedPrize = '';
-    } else {
-        if (prizeInventory[prize] <= 0) selectedPrize = '';
-    }
 
     const isBlindPrize = blindPrizes.has(prize);
 
     if (!isBlindPrize) {
-        // Non-blind: update tabs immediately so audience sees count drop
+        // Non-blind: update prize row and tabs immediately
+        document.querySelectorAll('.prize-row').forEach(row => {
+            if (row.querySelector('.pr-name').value.trim() === prize) {
+                row.querySelector('.pr-qty').value = prizeInventory[prize];
+            }
+        });
+        if (prizeSel === BLIND_KEY) {
+            if (getBlindPoolTotal() <= 0) selectedPrize = '';
+        } else {
+            if (prizeInventory[prize] <= 0) selectedPrize = '';
+        }
         syncPrizeTabs();
+    } else {
+        // Blind: only update internal state; UI deferred until after box-open animation
+        if (prizeSel === BLIND_KEY) {
+            if (getBlindPoolTotal() <= 0) selectedPrize = '';
+        } else {
+            if (prizeInventory[prize] <= 0) selectedPrize = '';
+        }
     }
-    // Blind: delay syncPrizeTabs until after the box-open animation
 
     // Push history and save ONLY after real winner is revealed (not during decoy phase)
     revealWinner(winner, decoy, prize, () => {
@@ -1865,8 +1869,13 @@ function finalizeWinner(names, winnerIdx, winner, decoy, onFinished) {
         saveCache();
 
         if (isBlindPrize) {
-            // Tabs update + batch continuation happen AFTER box is opened
+            // Prize row, tabs, batch continuation — all happen AFTER box is opened
             renderBlindReveal(historyEntry, () => {
+                document.querySelectorAll('.prize-row').forEach(row => {
+                    if (row.querySelector('.pr-name').value.trim() === prize) {
+                        row.querySelector('.pr-qty').value = prizeInventory[prize];
+                    }
+                });
                 syncPrizeTabs();
                 checkAllDone();
                 if (typeof onFinished === 'function') onFinished();
