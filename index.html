@@ -663,6 +663,65 @@
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: var(--border-hi); border-radius: 4px; }
         ::-webkit-scrollbar-thumb:hover { background: var(--gold); }
+
+        /* ─── Draw Controls ─── */
+        .draw-controls {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+        .undo-btn {
+            font-family: 'Noto Serif TC', serif;
+            background: transparent;
+            color: var(--text-sub);
+            border: 1px solid var(--border-hi);
+            border-radius: 6px;
+            padding: 7px 24px;
+            font-size: 13px;
+            font-family: inherit;
+            cursor: pointer;
+            transition: all .2s;
+        }
+        .undo-btn:hover:not(:disabled) { color: var(--gold); border-color: rgba(201,151,58,.4); }
+        .undo-btn:disabled { opacity: .3; cursor: not-allowed; }
+
+        /* ─── Export Button ─── */
+        .btn-export {
+            background: transparent;
+            color: var(--text-sub);
+            border: 1px solid var(--border-hi);
+            border-radius: 6px;
+            padding: 3px 10px;
+            font-size: 11px;
+            font-family: inherit;
+            cursor: pointer;
+            transition: all .2s;
+        }
+        .btn-export:hover { color: var(--gold); border-color: rgba(201,151,58,.4); }
+
+        /* ─── RWD ─── */
+        @media (max-width: 768px) {
+            html, body { overflow: auto; }
+            .app { flex-direction: column; overflow: visible; }
+            .p-settings {
+                width: 100%;
+                border-right: none;
+                border-bottom: 1px solid rgba(201,151,58,.15);
+                overflow-y: visible;
+            }
+            .p-draw { padding: 16px 12px; }
+            .slot-wrap, .prize-selector { max-width: 100%; }
+            .draw-info { flex-wrap: wrap; gap: 12px; }
+            .p-history {
+                width: 100%;
+                border-left: none;
+                border-top: 1px solid rgba(201,151,58,.15);
+                overflow-y: visible;
+                height: auto;
+            }
+            .history-list { max-height: 280px; }
+        }
     </style>
 </head>
 <body>
@@ -728,7 +787,10 @@
             <span>剩餘名額：<b id="infoQty">—</b></span>
         </div>
 
-        <button class="draw-btn" id="drawBtn" onclick="startDraw()">開始抽獎</button>
+        <div class="draw-controls">
+            <button class="draw-btn" id="drawBtn" onclick="startDraw()" aria-label="開始抽獎（Space 或 Enter）">開始抽獎</button>
+            <button class="undo-btn" id="undoBtn" onclick="undoLastDraw()" disabled title="復原上次抽獎（Ctrl+Z）">↩ 復原上次</button>
+        </div>
 
     </main>
 
@@ -736,7 +798,10 @@
     <aside class="panel p-history">
         <div class="history-header">
             <span>🏆 中獎名單</span>
-            <span class="history-count" id="historyCount">0</span>
+            <div style="display:flex;align-items:center;gap:8px;">
+                <button class="btn-export" onclick="exportHistory()" title="匯出 CSV">⬇ 匯出</button>
+                <span class="history-count" id="historyCount">0</span>
+            </div>
         </div>
         <ul class="history-list" id="historyList"></ul>
     </aside>
@@ -744,22 +809,42 @@
 </div>
 
 <script>
-// ─── State ──────────────────────────────────────────────────
+(function () {
+'use strict';
+
+// ─── Constants ───────────────────────────────────────────────
+const KEYS = { names: 'bh_names', prizes: 'bh_prizes', history: 'bh_history', selected: 'bh_selected' };
+
+// ─── State ───────────────────────────────────────────────────
 let prizeInventory = {};
 let selectedPrize  = "";
 let historyData    = [];
 let nameDebounce;
+let saveCacheTimer;
 let isDrawing      = false;
+let lastDraw       = null;   // for undo
 
 // ─── Init ────────────────────────────────────────────────────
-window.onload = () => loadCache();
+window.addEventListener('load', loadCache);
+
+document.addEventListener('keydown', e => {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    if ((e.key === ' ' || e.key === 'Enter') && !isDrawing) {
+        e.preventDefault();
+        startDraw();
+    }
+    if ((e.key === 'z' || e.key === 'Z') && (e.ctrlKey || e.metaKey) && !isDrawing) {
+        e.preventDefault();
+        undoLastDraw();
+    }
+});
 
 // ─── Cache ───────────────────────────────────────────────────
 function loadCache() {
-    const names   = localStorage.getItem('bh_names')   || "";
-    const prizes  = JSON.parse(localStorage.getItem('bh_prizes')  || '[]');
-    const history = JSON.parse(localStorage.getItem('bh_history') || '[]');
-    selectedPrize = localStorage.getItem('bh_selected') || "";
+    const names   = localStorage.getItem(KEYS.names)   || "";
+    const prizes  = JSON.parse(localStorage.getItem(KEYS.prizes)  || '[]');
+    const history = JSON.parse(localStorage.getItem(KEYS.history) || '[]');
+    selectedPrize = localStorage.getItem(KEYS.selected) || "";
 
     document.getElementById('namesInput').value = names;
     updateNameCount(names);
@@ -774,22 +859,20 @@ function loadCache() {
 }
 
 function saveCache() {
-    localStorage.setItem('bh_names',    document.getElementById('namesInput').value);
-    localStorage.setItem('bh_selected', selectedPrize);
+    localStorage.setItem(KEYS.names,    document.getElementById('namesInput').value);
+    localStorage.setItem(KEYS.selected, selectedPrize);
+    localStorage.setItem(KEYS.prizes,   JSON.stringify(collectPrizeRows()));
+    localStorage.setItem(KEYS.history,  JSON.stringify(historyData));
+}
 
-    const arr = [];
-    document.querySelectorAll('.prize-row').forEach(row => {
-        const name = row.querySelector('.pr-name').value.trim();
-        const qty  = parseInt(row.querySelector('.pr-qty').value) || 0;
-        if (name) arr.push({ name, qty });
-    });
-    localStorage.setItem('bh_prizes',  JSON.stringify(arr));
-    localStorage.setItem('bh_history', JSON.stringify(historyData));
+function saveCacheDebounced() {
+    clearTimeout(saveCacheTimer);
+    saveCacheTimer = setTimeout(saveCache, 300);
 }
 
 function resetAll() {
     if (confirm("⚠️ 確定重設所有資料？此操作不可復原。")) {
-        localStorage.clear();
+        Object.values(KEYS).forEach(k => localStorage.removeItem(k));
         location.reload();
     }
 }
@@ -808,17 +891,19 @@ function updateNameCount(raw) {
 }
 
 function deduplicateNames() {
-    const ta  = document.getElementById('namesInput');
-    const raw = ta.value.split('\n').map(s => s.trim()).filter(Boolean);
-    const unique = [], dupes = [];
-    raw.forEach(n => {
-        if (unique.includes(n)) { if (!dupes.includes(n)) dupes.push(n); }
-        else unique.push(n);
+    const ta    = document.getElementById('namesInput');
+    const raw   = ta.value.split('\n').map(s => s.trim()).filter(Boolean);
+    const seen  = new Set();
+    const dupes = [];
+    const unique = raw.filter(n => {
+        if (seen.has(n)) { if (!dupes.includes(n)) dupes.push(n); return false; }
+        seen.add(n);
+        return true;
     });
     if (dupes.length) alert(`偵測到重複名稱，已自動過濾：\n${dupes.join('、')}`);
     ta.value = unique.join('\n');
     updateNameCount(ta.value);
-    saveCache();
+    saveCacheDebounced();
     return unique;
 }
 
@@ -853,9 +938,19 @@ function removePrizeRow(btn) {
     syncPrizeTabs();
 }
 
+function collectPrizeRows() {
+    const arr = [];
+    document.querySelectorAll('.prize-row').forEach(row => {
+        const name = row.querySelector('.pr-name').value.trim();
+        const qty  = parseInt(row.querySelector('.pr-qty').value) || 0;
+        if (name) arr.push({ name, qty });
+    });
+    return arr;
+}
+
 // ─── Prize Tabs ──────────────────────────────────────────────
 function syncPrizeTabs() {
-    // ── Step 1: Merge duplicate settings rows (silent) ─────────
+    // Merge duplicate prize rows (silent)
     const seen = {};
     document.querySelectorAll('.prize-row').forEach(row => {
         const nameEl = row.querySelector('.pr-name');
@@ -863,67 +958,70 @@ function syncPrizeTabs() {
         const name   = nameEl.value.trim();
         const qty    = parseInt(qtyEl.value) || 0;
         if (!name) return;
-        if (seen[name]) {
-            seen[name].total += qty;
-            row.remove(); // remove duplicate row
-        } else {
-            seen[name] = { qtyEl, total: qty };
-        }
+        if (seen[name]) { seen[name].total += qty; row.remove(); }
+        else            { seen[name] = { qtyEl, total: qty }; }
     });
-    // Sync merged quantities back to the surviving rows
     Object.values(seen).forEach(({ qtyEl, total }) => { qtyEl.value = total; });
 
-    // ── Step 2: Rebuild inventory ───────────────────────────────
+    prizeInventory = buildInventory();
+
+    if (selectedPrize && (!prizeInventory[selectedPrize] || prizeInventory[selectedPrize] <= 0)) {
+        selectedPrize = "";
+    }
+
+    renderTabs();
+    updateInfoBar();
+    saveCacheDebounced();
+}
+
+function buildInventory() {
     const inv = {};
     document.querySelectorAll('.prize-row').forEach(row => {
         const name = row.querySelector('.pr-name').value.trim();
         const qty  = parseInt(row.querySelector('.pr-qty').value) || 0;
         if (name) inv[name] = (inv[name] || 0) + qty;
     });
-    prizeInventory = inv;
+    return inv;
+}
 
-    // Validate selection
-    if (selectedPrize && (!prizeInventory[selectedPrize] || prizeInventory[selectedPrize] <= 0)) {
-        selectedPrize = "";
-    }
-
-    // Render
+function renderTabs() {
     const board = document.getElementById('prizeTabs');
     board.innerHTML = '';
-
     const entries = Object.entries(prizeInventory);
     if (entries.length === 0) {
         board.innerHTML = '<div class="no-prize-hint">尚未設定任何獎項</div>';
-    } else {
-        entries.forEach(([name, qty]) => {
-            const soldout = qty <= 0;
-            const active  = name === selectedPrize;
-            const tab = document.createElement('div');
-            tab.className = 'prize-tab' + (soldout ? ' soldout' : '') + (active ? ' active' : '');
-            tab.innerHTML = `<span class="t-name">${esc(name)}</span>
-                             <span class="t-qty">${soldout ? '已抽完' : `剩 ${qty} 個`}</span>`;
-            if (!soldout) tab.onclick = () => selectPrize(name);
-            board.appendChild(tab);
-        });
+        return;
     }
-
-    updateInfoBar();
-    saveCache();
+    entries.forEach(([name, qty]) => {
+        const soldout = qty <= 0;
+        const active  = name === selectedPrize;
+        const tab = document.createElement('button');
+        tab.type = 'button';
+        tab.className = 'prize-tab' + (soldout ? ' soldout' : '') + (active ? ' active' : '');
+        tab.setAttribute('aria-pressed', active ? 'true' : 'false');
+        tab.setAttribute('aria-label', `${name}，${soldout ? '已抽完' : `剩餘 ${qty} 個`}`);
+        tab.innerHTML = `<span class="t-name">${esc(name)}</span>
+                         <span class="t-qty">${soldout ? '已抽完' : `剩 ${qty} 個`}</span>`;
+        if (!soldout) tab.onclick = () => selectPrize(name);
+        board.appendChild(tab);
+    });
 }
 
 function selectPrize(name) {
     selectedPrize = name;
     document.querySelectorAll('.prize-tab').forEach(tab => {
-        tab.classList.toggle('active', tab.querySelector('.t-name').textContent === name);
+        const active = tab.querySelector('.t-name').textContent === name;
+        tab.classList.toggle('active', active);
+        tab.setAttribute('aria-pressed', active ? 'true' : 'false');
     });
     updateInfoBar();
-    saveCache();
+    saveCacheDebounced();
 }
 
 function updateInfoBar() {
-    const hasSelection = selectedPrize && prizeInventory[selectedPrize] !== undefined;
-    document.getElementById('infoName').textContent = hasSelection ? selectedPrize : '—';
-    document.getElementById('infoQty').textContent  = hasSelection ? prizeInventory[selectedPrize] + ' 個' : '—';
+    const has = selectedPrize && prizeInventory[selectedPrize] !== undefined;
+    document.getElementById('infoName').textContent = has ? selectedPrize : '—';
+    document.getElementById('infoQty').textContent  = has ? prizeInventory[selectedPrize] + ' 個' : '—';
 }
 
 // ─── History ─────────────────────────────────────────────────
@@ -948,10 +1046,21 @@ function pushHistory(prize, winner) {
     document.getElementById('historyCount').textContent = historyData.length;
 }
 
+function exportHistory() {
+    if (!historyData.length) { alert('尚無中獎紀錄'); return; }
+    const csv  = '獎項,中獎者\n' + historyData.map(r => `"${r.prize}","${r.winner}"`).join('\n');
+    const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8' });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href = url; a.download = '中獎名單.csv'; a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
 // ─── Draw ────────────────────────────────────────────────────
 function startDraw() {
     if (isDrawing) return;
-    const names = deduplicateNames();
+    // Silent dedup with Set (no alert, no textarea rewrite at draw time)
+    const names = [...new Set(getNames())];
     if (!names.length)  { alert("名單是空的！"); return; }
     if (!selectedPrize) { alert("請先選擇一個獎項！"); return; }
     if (!prizeInventory[selectedPrize] || prizeInventory[selectedPrize] <= 0) {
@@ -960,6 +1069,7 @@ function startDraw() {
 
     isDrawing = true;
     document.getElementById('drawBtn').disabled = true;
+    document.getElementById('undoBtn').disabled = true;
 
     const winnerIdx = Math.floor(Math.random() * names.length);
     const winner    = names[winnerIdx];
@@ -968,57 +1078,79 @@ function startDraw() {
 }
 
 // ─── Slot Machine ─────────────────────────────────────────────
+function shuffle(arr) {
+    const a = [...arr];
+    for (let i = a.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+}
+
 function runSlotMachine(names, winner, onComplete) {
     const ITEM_H    = 72;
     const MACHINE_H = 360;
-    const CENTER_Y  = MACHINE_H / 2 - ITEM_H / 2; // 144px
+    const CENTER_Y  = MACHINE_H / 2 - ITEM_H / 2;
 
-    // Build sequence: many random rounds…
-    const minItems = 55;
-    const rounds   = Math.max(4, Math.ceil(minItems / names.length));
-    const seq      = [];
-    for (let r = 0; r < rounds; r++) {
-        seq.push(...[...names].sort(() => Math.random() - 0.5));
+    function fillNoDup(seq, cycle, count, cyclePos) {
+        if (names.length === 1) {
+            for (let i = 0; i < count; i++) seq.push(names[0]);
+            return cyclePos;
+        }
+        let i = cyclePos, filled = 0;
+        while (filled < count) {
+            const candidate = cycle[i % cycle.length];
+            i++;
+            if (candidate !== seq[seq.length - 1]) { seq.push(candidate); filled++; }
+        }
+        return i;
     }
 
-    // Winner goes HERE (not at the absolute end)
+    const baseCycle = shuffle(names);
+    const minItems  = 55;
+    const rounds    = Math.max(4, Math.ceil(minItems / names.length));
+    const seq       = [];
+    let cyclePos    = 0;
+
+    cyclePos = fillNoDup(seq, baseCycle, rounds * names.length, cyclePos);
+
+    if (names.length > 1 && seq.length > 0 && seq[seq.length - 1] === winner) {
+        cyclePos = fillNoDup(seq, baseCycle, 1, cyclePos);
+    }
+
     const winnerAt = seq.length;
     seq.push(winner);
 
-    // Pad with 4–8 random extra items AFTER winner.
-    // This hides the "end" of the reel from viewers, so they can't
-    // count down and predict who wins before the machine stops.
     const tail = 4 + Math.floor(Math.random() * 5);
-    for (let i = 0; i < tail; i++) {
-        seq.push(names[Math.floor(Math.random() * names.length)]);
-    }
+    fillNoDup(seq, baseCycle, tail, cyclePos);
 
-    // Render strip
     const strip = document.getElementById('slotStrip');
     strip.style.transition = '';
     strip.style.transform  = `translateY(${CENTER_Y}px)`;
     strip.innerHTML = seq.map(n => `<div class="slot-item">${esc(n)}</div>`).join('');
 
-    document.getElementById('slotReady').style.display    = 'none';
+    document.getElementById('slotReady').style.display     = 'none';
     document.getElementById('winnerDisplay').style.display = 'none';
     strip.style.display = 'block';
 
-    let idx   = 0;
-    let speed = 38;
+    let idx      = 0;
+    let speed    = 38;
+    let lastTime = 0;
 
-    function step() {
+    function step(timestamp) {
+        if (timestamp - lastTime < speed) { requestAnimationFrame(step); return; }
+        lastTime = timestamp;
         strip.style.transform = `translateY(${CENTER_Y - idx * ITEM_H}px)`;
 
         if (idx >= winnerAt) {
-            // Winner is centered — gentle settle bounce, then reveal
             const winY = CENTER_Y - winnerAt * ITEM_H;
             setTimeout(() => {
                 strip.style.transition = 'transform 0.13s ease-out';
-                strip.style.transform  = `translateY(${winY - 9}px)`;      // overshoot up
+                strip.style.transform  = `translateY(${winY - 9}px)`;
                 setTimeout(() => {
-                    strip.style.transform = `translateY(${winY + 3}px)`;   // slight rebound
+                    strip.style.transform = `translateY(${winY + 3}px)`;
                     setTimeout(() => {
-                        strip.style.transform = `translateY(${winY}px)`;   // settle
+                        strip.style.transform = `translateY(${winY}px)`;
                         setTimeout(() => {
                             strip.style.transition = '';
                             strip.style.display = 'none';
@@ -1032,30 +1164,25 @@ function runSlotMachine(names, winner, onComplete) {
         }
 
         idx++;
-        // Speed curve: full speed for first 65%, then exponential ease-out
         const progress = idx / winnerAt;
         speed = progress < 0.65
             ? 38
             : 38 + Math.pow((progress - 0.65) / 0.35, 2.6) * 560;
 
-        setTimeout(step, speed);
+        requestAnimationFrame(step);
     }
 
-    step();
+    requestAnimationFrame(step);
 }
 
 function revealWinner(winner) {
     const wd  = document.getElementById('winnerDisplay');
     const txt = document.getElementById('winnerNameText');
-
-    // Reset CSS animation by removing and re-applying
     txt.style.animation = 'none';
     txt.textContent = winner;
     wd.style.display = 'flex';
-    txt.offsetHeight; // force reflow
+    txt.offsetHeight; // force reflow to restart animation
     txt.style.animation = '';
-
-    // Particle burst
     spawnParticles();
 }
 
@@ -1085,6 +1212,8 @@ function finalizeWinner(names, winnerIdx, winner) {
     const ta    = document.getElementById('namesInput');
     const prize = selectedPrize;
 
+    lastDraw = { winnerIdx, winner, prize }; // store for undo
+
     names.splice(winnerIdx, 1);
     ta.value = names.join('\n');
     updateNameCount(ta.value);
@@ -1104,6 +1233,35 @@ function finalizeWinner(names, winnerIdx, winner) {
 
     isDrawing = false;
     document.getElementById('drawBtn').disabled = false;
+    document.getElementById('undoBtn').disabled = false;
+}
+
+// ─── Undo ────────────────────────────────────────────────────
+function undoLastDraw() {
+    if (!lastDraw || isDrawing) return;
+    const { winnerIdx, winner, prize } = lastDraw;
+    lastDraw = null;
+
+    // Restore winner at original position
+    const ta      = document.getElementById('namesInput');
+    const current = getNames();
+    current.splice(winnerIdx, 0, winner);
+    ta.value = current.join('\n');
+    updateNameCount(ta.value);
+
+    prizeInventory[prize]++;
+    document.querySelectorAll('.prize-row').forEach(row => {
+        if (row.querySelector('.pr-name').value.trim() === prize) {
+            row.querySelector('.pr-qty').value = prizeInventory[prize];
+        }
+    });
+
+    historyData.shift();
+    renderHistory();
+    syncPrizeTabs();
+    saveCache();
+
+    document.getElementById('undoBtn').disabled = true;
 }
 
 // ─── Util ────────────────────────────────────────────────────
@@ -1114,6 +1272,14 @@ function esc(str) {
         .replace(/</g,'&lt;')
         .replace(/>/g,'&gt;');
 }
+
+// Expose functions needed by inline HTML event handlers
+Object.assign(window, {
+    onNameInput, addPrize, removePrizeRow, syncPrizeTabs,
+    startDraw, resetAll, exportHistory, undoLastDraw
+});
+
+})();
 </script>
 
 </body>
