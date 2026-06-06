@@ -249,6 +249,10 @@
         .blind-check-row input[type="checkbox"] { accent-color:var(--gold); width:14px; height:14px; cursor:pointer; }
         .blind-cfg-empty { color:var(--text-sub); font-size:12px; text-align:center; padding:6px 0; }
 
+        /* Blind badge on individual prize tabs */
+        .blind-badge { font-size:10px; margin-left:3px; opacity:.75; vertical-align:middle; }
+        .prize-tab.blind-tagged { border-color: rgba(201,151,58,.35); }
+
         /* ─── Blind Open Button (inside winner display) ─── */
         .blind-open-btn {
             margin-top:10px;
@@ -1349,18 +1353,18 @@ function renderTabs() {
         return;
     }
 
-    // All prizes: non-blind show real name, blind show "🎰 ????"
+    // All prizes: real name always shown; blind prizes get a small 🎰 badge
     entries.forEach(([name, qty]) => {
         const soldout  = qty <= 0;
         const active   = name === selectedPrize;
         const isBlind  = blindPrizes.has(name);
-        const display  = isBlind ? '🎰 ???' : name;
         const tab = document.createElement('button');
         tab.type = 'button';
-        tab.className = 'prize-tab' + (soldout ? ' soldout' : '') + (active ? ' active' : '');
+        tab.className = 'prize-tab' + (soldout ? ' soldout' : '') + (active ? ' active' : '') + (isBlind ? ' blind-tagged' : '');
         tab.setAttribute('aria-pressed', active ? 'true' : 'false');
-        tab.setAttribute('aria-label', `${isBlind ? '盲盒獎項' : name}，${soldout ? '已抽完' : `剩餘 ${qty} 個`}`);
-        tab.innerHTML = `<span class="t-name">${esc(display)}</span>
+        tab.setAttribute('aria-label', `${name}${isBlind ? '（已納入盲盒）' : ''}，${soldout ? '已抽完' : `剩餘 ${qty} 個`}`);
+        const badge = isBlind ? '<span class="blind-badge">🎰</span>' : '';
+        tab.innerHTML = `<span class="t-name">${esc(name)}${badge}</span>
                          <span class="t-qty">${soldout ? '已抽完' : `剩 ${qty} 個`}</span>`;
         if (!soldout) tab.addEventListener('click', () => selectPrize(name));
         board.appendChild(tab);
