@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎉 歡迎來到簡易抽獎系統</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f7f6;
+            text-align: center;
+            padding: 50px;
+        }
+        .container {
+            max-width: 500px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        textarea {
+            width: 100%;
+            height: 150px;
+            padding: 10px;
+            box-sizing: border-box;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 18px;
+            margin-top: 15px;
+            width: 100%;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        #result {
+            margin-top: 25px;
+            font-size: 24px;
+            font-weight: bold;
+            color: #e91e63;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>🎉 簡易隨機抽獎系統</h2>
+    <p style="color: #666;">請在下方輸入抽獎名單（一人一行）：</p>
+    
+    <textarea id="namesPlaceholder" placeholder="例如：&#10;小明&#10;小華&#10;小白"></textarea>
+    
+    <button onclick="drawLuckyOne()">✨ 開始抽獎 ✨</button>
+    
+    <div id="result"></div>
+</div>
+
+<script>
+function drawLuckyOne() {
+    // 1. 取得輸入框裡面的文字
+    const text = document.getElementById('namesPlaceholder').value.trim();
+    
+    if (text === "") {
+        alert("請先輸入抽獎名單喔！");
+        return;
+    }
+    
+    // 2. 用「換行」把名字切開，變成一個陣列（名單列表）
+    const nameList = text.split('\n').map(name => name.trim()).filter(name => name !== "");
+    
+    if (nameList.length === 0) {
+        alert("名單好像空空的，請重新輸入。");
+        return;
+    }
+    
+    // 3. 隨機產生一個陣列索引號碼
+    const randomIndex = Math.floor(Math.random() * nameList.length);
+    const winner = nameList[randomIndex];
+    
+    // 4. 把中獎結果顯示在網頁上
+    document.getElementById('result').innerHTML = "恭喜中獎人：✨ " + winner + " ✨";
+}
+</script>
+
+</body>
+</html>
