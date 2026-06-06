@@ -1568,9 +1568,8 @@ function startDraw() {
 // allowSpecial=false on re-draws triggered by fake decree to prevent infinite loop
 function runBatchDraw(remaining, allowSpecial = true) {
     if (remaining === 0) {
-        setDrawingState(false);        // unlock page + enable button immediately
-        showToast('已完成抽選 🎉', 4000); // longer toast so user notices
-        setTimeout(resetStage, 2500);  // clear winner display after winner is seen
+        setDrawingState(false);
+        setTimeout(resetStage, 2500);
         return;
     }
 
