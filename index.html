@@ -1449,7 +1449,7 @@ function runSlotMachine(names, winner, decoy, onComplete) {
     const ITEM_H = 72;
     const MACHINE_H = 360;
     const CENTER_Y = MACHINE_H / 2 - ITEM_H / 2;
-    void decoy;
+    const stopTarget = decoy || winner; // slot visually stops here; decoy if intercept
 
     function fillNoDup(seq, cycle, count, cyclePos) {
         if (names.length === 1) {
@@ -1477,12 +1477,12 @@ function runSlotMachine(names, winner, decoy, onComplete) {
 
     cyclePos = fillNoDup(seq, baseCycle, rounds * names.length, cyclePos);
 
-    if (names.length > 1 && seq.length > 0 && seq[seq.length - 1] === winner) {
+    if (names.length > 1 && seq.length > 0 && seq[seq.length - 1] === stopTarget) {
         cyclePos = fillNoDup(seq, baseCycle, 1, cyclePos);
     }
 
     const winnerAt = seq.length;
-    seq.push(winner);
+    seq.push(stopTarget); // stop visually on decoy (or real winner if no intercept)
 
     const tail = 4 + Math.floor(Math.random() * 5);
     fillNoDup(seq, baseCycle, tail, cyclePos);
@@ -1540,7 +1540,7 @@ function runSlotMachine(names, winner, decoy, onComplete) {
     requestAnimationFrame(step);
 }
 
-function revealWinner(winner, decoy, historyEntry, onShown) {
+function revealWinner(winner, decoy, prize, onRealShown) {
     const wd = document.getElementById('winnerDisplay');
     const txt = document.getElementById('winnerNameText');
     const extra = document.getElementById('winnerPrizeReveal');
@@ -1559,20 +1559,20 @@ function revealWinner(winner, decoy, historyEntry, onShown) {
         void txt.offsetHeight;
         txt.style.animation = '';
         spawnParticles();
-        if (historyEntry && historyEntry.realPrize && historyEntry.prize === '???') {
-            renderBlindReveal(historyEntry);
-        }
-        if (typeof onShown === 'function') onShown();
+        // Now safe to show history and save
+        if (typeof onRealShown === 'function') onRealShown();
     };
 
     txt.style.animation = 'none';
     txt.textContent = decoy || winner;
-    txt.classList.toggle('decoy', !!decoy);
+    txt.classList.remove('decoy'); // always start as normal winner style
     void txt.offsetHeight;
     txt.style.animation = '';
 
     if (decoy) {
         setTimeout(() => {
+            // Sword appears → simultaneously turn decoy red to signal "intercepted!"
+            txt.classList.add('decoy');
             const slash = document.createElement('div');
             slash.className = 'sword-slash';
             slash.textContent = '⚔';
@@ -1655,12 +1655,17 @@ function finalizeWinner(names, winnerIdx, winner, decoy, onFinished) {
 
     if (prizeInventory[prize] <= 0) selectedPrize = '';
 
-    const historyEntry = pushHistory(prize, winner);
     syncPrizeTabs();
-    clearTimeout(saveCacheTimer);
-    saveCache();
-    checkAllDone();
-    revealWinner(winner, decoy, historyEntry, onFinished);
+
+    // Push history and save ONLY after real winner is revealed (not during decoy phase)
+    revealWinner(winner, decoy, prize, () => {
+        const historyEntry = pushHistory(prize, winner);
+        clearTimeout(saveCacheTimer);
+        saveCache();
+        checkAllDone();
+        if (blindPrizes.has(prize)) renderBlindReveal(historyEntry);
+        if (typeof onFinished === 'function') onFinished();
+    });
 }
 
 function checkAllDone() {
