@@ -1009,6 +1009,8 @@ const KEYS = {
     batch: 'bh_batch',
     blind: 'bh_blind'
 };
+// Sentinel value used when the "blind pool" tab is selected
+const BLIND_KEY = '__blind__';
 
 // ─── State ───────────────────────────────────────────────────
 let prizeInventory = {};
@@ -1289,7 +1291,9 @@ function syncPrizeTabs() {
     // Clean up blind prizes that no longer exist
     blindPrizes = new Set([...blindPrizes].filter(p => prizeInventory[p] !== undefined));
 
-    if (selectedPrize && (!prizeInventory[selectedPrize] || prizeInventory[selectedPrize] <= 0)) {
+    if (selectedPrize === BLIND_KEY) {
+        if (getBlindPoolTotal() <= 0) selectedPrize = '';
+    } else if (selectedPrize && (!prizeInventory[selectedPrize] || prizeInventory[selectedPrize] <= 0)) {
         selectedPrize = '';
     }
 
@@ -1322,6 +1326,22 @@ function syncBlindConfig() {
     });
 }
 
+function getBlindPoolTotal() {
+    return [...blindPrizes].reduce((sum, p) => sum + (prizeInventory[p] || 0), 0);
+}
+
+function pickBlindPrize() {
+    const available = [...blindPrizes].filter(p => (prizeInventory[p] || 0) > 0);
+    if (!available.length) return null;
+    const total = available.reduce((s, p) => s + prizeInventory[p], 0);
+    let r = Math.random() * total;
+    for (const p of available) {
+        r -= prizeInventory[p];
+        if (r <= 0) return p;
+    }
+    return available[available.length - 1];
+}
+
 function renderTabs() {
     const board = document.getElementById('prizeTabs');
     board.innerHTML = '';
@@ -1330,21 +1350,38 @@ function renderTabs() {
         board.innerHTML = '<div class="no-prize-hint">尚未設定任何獎項</div>';
         return;
     }
+
+    // Non-blind prizes: render individually
     entries.forEach(([name, qty]) => {
-        const soldout    = qty <= 0;
-        const active     = name === selectedPrize;
-        const isBlind    = blindPrizes.has(name);
-        const displayName = isBlind ? '🎰 ???' : name;
+        if (blindPrizes.has(name)) return;
+        const soldout = qty <= 0;
+        const active  = name === selectedPrize;
         const tab = document.createElement('button');
         tab.type = 'button';
         tab.className = 'prize-tab' + (soldout ? ' soldout' : '') + (active ? ' active' : '');
         tab.setAttribute('aria-pressed', active ? 'true' : 'false');
-        tab.setAttribute('aria-label', `${isBlind ? '盲盒獎項' : name}，${soldout ? '已抽完' : `剩餘 ${qty} 個`}`);
-        tab.innerHTML = `<span class="t-name">${esc(displayName)}</span>
+        tab.setAttribute('aria-label', `${name}，${soldout ? '已抽完' : `剩餘 ${qty} 個`}`);
+        tab.innerHTML = `<span class="t-name">${esc(name)}</span>
                          <span class="t-qty">${soldout ? '已抽完' : `剩 ${qty} 個`}</span>`;
         if (!soldout) tab.addEventListener('click', () => selectPrize(name));
         board.appendChild(tab);
     });
+
+    // Blind prizes: one combined pool tab
+    if (blindPrizes.size > 0) {
+        const blindTotal = getBlindPoolTotal();
+        const soldout = blindTotal <= 0;
+        const active  = selectedPrize === BLIND_KEY;
+        const tab = document.createElement('button');
+        tab.type = 'button';
+        tab.className = 'prize-tab' + (soldout ? ' soldout' : '') + (active ? ' active' : '');
+        tab.setAttribute('aria-pressed', active ? 'true' : 'false');
+        tab.setAttribute('aria-label', `盲盒獎項，${soldout ? '已抽完' : `剩餘 ${blindTotal} 個`}`);
+        tab.innerHTML = `<span class="t-name">🎰 ???</span>
+                         <span class="t-qty">${soldout ? '已抽完' : `剩 ${blindTotal} 個`}</span>`;
+        if (!soldout) tab.addEventListener('click', () => selectPrize(BLIND_KEY));
+        board.appendChild(tab);
+    }
 }
 
 function selectPrize(name) {
@@ -1355,10 +1392,14 @@ function selectPrize(name) {
 }
 
 function updateInfoBar() {
-    const has = selectedPrize && prizeInventory[selectedPrize] !== undefined;
-    const displayName = has && blindPrizes.has(selectedPrize) ? '🎰 ???' : (has ? selectedPrize : '—');
-    document.getElementById('infoName').textContent = displayName;
-    document.getElementById('infoQty').textContent = has ? prizeInventory[selectedPrize] + ' 個' : '—';
+    if (selectedPrize === BLIND_KEY) {
+        document.getElementById('infoName').textContent = '🎰 ???';
+        document.getElementById('infoQty').textContent = getBlindPoolTotal() + ' 個';
+    } else {
+        const has = selectedPrize && prizeInventory[selectedPrize] !== undefined;
+        document.getElementById('infoName').textContent = has ? selectedPrize : '—';
+        document.getElementById('infoQty').textContent = has ? prizeInventory[selectedPrize] + ' 個' : '—';
+    }
 }
 
 // ─── History ─────────────────────────────────────────────────
@@ -1450,7 +1491,7 @@ function startDraw() {
     if (isDrawing) return;
 
     const names = [...new Set(getNames())];
-    const qty = prizeInventory[selectedPrize] || 0;
+    const qty = selectedPrize === BLIND_KEY ? getBlindPoolTotal() : (prizeInventory[selectedPrize] || 0);
 
     if (!names.length) {
         showToast('名單是空的！');
@@ -1490,7 +1531,10 @@ function runBatchDraw(remaining) {
         showToast('名單是空的！');
         return;
     }
-    if (!selectedPrize || !prizeInventory[selectedPrize] || prizeInventory[selectedPrize] <= 0) {
+    const poolOk = selectedPrize === BLIND_KEY
+        ? getBlindPoolTotal() > 0
+        : (selectedPrize && prizeInventory[selectedPrize] > 0);
+    if (!poolOk) {
         setDrawingState(false);
         showToast('此獎項已全數抽完！');
         return;
@@ -1771,7 +1815,15 @@ function finalizeWinner(names, winnerIdx, winner, decoy, onFinished) {
     saveSnapshot();
 
     const ta = document.getElementById('namesInput');
-    const prize = selectedPrize;
+    const prizeSel = selectedPrize;
+    // For blind pool: randomly pick the actual prize NOW (true randomness, not pre-determined)
+    const prize = prizeSel === BLIND_KEY ? pickBlindPrize() : prizeSel;
+
+    if (!prize) {
+        setDrawingState(false);
+        showToast('盲盒獎項已全數抽完！');
+        return;
+    }
 
     if (autoRemove) {
         names.splice(winnerIdx, 1);
@@ -1786,7 +1838,12 @@ function finalizeWinner(names, winnerIdx, winner, decoy, onFinished) {
         }
     });
 
-    if (prizeInventory[prize] <= 0) selectedPrize = '';
+    // Auto-clear selection when exhausted
+    if (prizeSel === BLIND_KEY) {
+        if (getBlindPoolTotal() <= 0) selectedPrize = '';
+    } else {
+        if (prizeInventory[prize] <= 0) selectedPrize = '';
+    }
 
     syncPrizeTabs();
 
