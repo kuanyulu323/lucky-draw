@@ -3,163 +3,303 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🌺 彼岸花抽獎系統</title>
+    <title>🌺 彼岸花璀璨抽獎系統</title>
     <style>
+        :root {
+            --primary-color: #ff3344;
+            --primary-hover: #dd1122;
+            --bg-color: #0d0f12;
+            --card-bg: #161a22;
+            --text-main: #f0f3f8;
+            --text-muted: #8b9bb4;
+            --border-color: #2d3545;
+        }
+
         body {
-            font-family: 'Microsoft JhengHei', Arial, sans-serif;
-            background-color: #fcf8f8;
+            font-family: 'PingFang TC', 'Microsoft JhengHei', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
             margin: 0;
-            padding: 20px;
+            padding: 30px;
             display: flex;
             justify-content: center;
             align-items: flex-start;
             min-height: 100vh;
             box-sizing: border-box;
         }
-        /* 左右雙欄佈局 */
+
         .main-layout {
             display: flex;
             width: 100%;
-            max-width: 1100px;
-            gap: 20px;
+            max-width: 1200px;
+            gap: 25px;
         }
-        /* 左欄與右欄的共同基礎樣式 */
+
         .card {
-            background: white;
-            padding: 25px;
-            border-radius: 12px;
-            box-shadow: 0 4px 15px rgba(219, 68, 85, 0.1);
-            border-top: 5px solid #db4455; /* 彼岸花紅 */
+            background: var(--card-bg);
+            padding: 30px;
+            border-radius: 16px;
+            box-shadow: 0 8px 32px rgba(255, 51, 68, 0.08), inset 0 1px 0 rgba(255,255,255,0.05);
+            border: 1px solid var(--border-color);
             box-sizing: border-box;
+            position: relative;
+            overflow: hidden;
         }
-        .left-panel {
-            flex: 1.5;
+        
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: linear-gradient(90deg, #ff3344, #ff66aa);
         }
-        .right-panel {
-            flex: 1;
-            min-height: 500px;
-        }
+
+        .left-panel { flex: 1.6; }
+        .right-panel { flex: 1; min-height: 550px; }
+
         h2 {
-            color: #db4455;
+            color: #ffffff;
             margin-top: 0;
             text-align: center;
+            font-size: 26px;
+            letter-spacing: 2px;
+            text-shadow: 0 0 10px rgba(255, 51, 68, 0.5);
         }
+
+        h2 span { color: var(--primary-color); }
+
         h3 {
-            color: #444;
-            margin-bottom: 10px;
-            border-bottom: 1px solid #eee;
-            padding-bottom: 5px;
+            color: #ffffff;
+            margin-top: 0;
+            font-size: 20px;
+            border-bottom: 2px solid var(--border-color);
+            padding-bottom: 10px;
         }
+
         .form-group {
-            margin-bottom: 15px;
+            margin-bottom: 20px;
             text-align: left;
         }
+
         label {
-            font-weight: bold;
+            font-weight: 600;
             display: block;
-            margin-bottom: 5px;
-            color: #555;
-        }
-        textarea {
-            width: 100%;
-            height: 120px;
-            padding: 10px;
-            box-sizing: border-box;
-            border: 1px solid #ccc;
-            border-radius: 6px;
-            font-size: 15px;
-            resize: vertical;
-        }
-        select, input[type="number"] {
-            width: 100%;
-            padding: 10px;
-            box-sizing: border-box;
-            border: 1px solid #ccc;
-            border-radius: 6px;
+            margin-bottom: 8px;
+            color: var(--text-main);
             font-size: 15px;
         }
-        /* 獎項設定區域 */
+
+        textarea, input {
+            width: 100%;
+            background-color: #1a202c;
+            color: #ffffff;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 12px;
+            box-sizing: border-box;
+            font-size: 15px;
+            transition: all 0.3s;
+        }
+
+        textarea:focus, input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 8px rgba(255, 51, 68, 0.25);
+        }
+
+        textarea { height: 110px; resize: vertical; }
+
         .prize-input-row {
             display: flex;
             gap: 10px;
-            margin-bottom: 8px;
+            margin-bottom: 10px;
+            align-items: center;
         }
-        .prize-input-row input {
-            padding: 8px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-        }
+
         .btn-add {
-            background-color: #666;
-            color: white;
-            border: none;
-            padding: 5px 10px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 13px;
-        }
-        /* 抽獎大按鈕 */
-        .draw-btn {
-            background-color: #db4455;
-            color: white;
-            padding: 15px;
-            border: none;
+            background-color: #242b3d;
+            color: var(--text-main);
+            border: 1px solid var(--border-color);
+            padding: 8px 16px;
             border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: 0.2s;
+        }
+        .btn-add:hover {
+            background-color: #313b54;
+            border-color: #4a5775;
+        }
+
+        .btn-del {
+            background: none;
+            border: none;
+            color: #ff4455;
+            cursor: pointer;
+            font-size: 18px;
+            padding: 5px 10px;
+            transition: 0.2s;
+        }
+        .btn-del:hover { transform: scale(1.2); text-shadow: 0 0 8px rgba(255,68,85,0.5); }
+
+        /* ✨ 亮燈字卡容器佈局 */
+        .prize-cards-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-top: 10px;
+        }
+
+        /* 預設獎項字卡樣式 */
+        .prize-badge-card {
+            background: #1a202c;
+            border: 2px solid var(--border-color);
+            border-radius: 10px;
+            padding: 12px 18px;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-width: 100px;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            user-select: none;
+        }
+
+        .prize-badge-card .p-name {
+            font-size: 15px;
+            font-weight: bold;
+            color: var(--text-main);
+            margin-bottom: 4px;
+        }
+
+        .prize-badge-card .p-qty {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        /* 🔴 關鍵點擊激活：霓虹紅光特效 */
+        .prize-badge-card.active {
+            border-color: var(--primary-color);
+            background: rgba(255, 51, 68, 0.08);
+            box-shadow: 0 0 15px rgba(255, 51, 68, 0.4), inset 0 0 8px rgba(255, 51, 68, 0.2);
+            transform: translateY(-2px);
+        }
+        .prize-badge-card.active .p-name { color: #ffffff; }
+        .prize-badge-card.active .p-qty { color: #ff8899; font-weight: bold; }
+
+        /* 當獎項抽完時的灰化樣式 */
+        .prize-badge-card.soldout {
+            opacity: 0.3;
+            border-color: #222;
+            background: #111;
+            cursor: not-allowed;
+            pointer-events: none;
+        }
+
+        .draw-btn {
+            background: linear-gradient(135deg, #ff3344, #dd1122);
+            color: white;
+            padding: 16px;
+            border: none;
+            border-radius: 8px;
             cursor: pointer;
             font-size: 20px;
             font-weight: bold;
             width: 100%;
             margin-top: 15px;
-            transition: 0.2s;
-            box-shadow: 0 4px 6px rgba(219, 68, 85, 0.2);
+            transition: all 0.3s;
+            box-shadow: 0 4px 20px rgba(255, 51, 68, 0.3);
+            letter-spacing: 4px;
         }
         .draw-btn:hover {
-            background-color: #c33343;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 25px rgba(255, 51, 68, 0.5);
         }
         .draw-btn:disabled {
-            background-color: #ccc;
+            background: #2d3545;
+            color: var(--text-muted);
             box-shadow: none;
             cursor: not-allowed;
+            transform: none;
         }
-        /* 結果顯示區 */
-        #result {
-            margin: 20px 0;
-            padding: 15px;
-            background: #fff5f5;
-            border-radius: 6px;
-            font-size: 26px;
-            font-weight: bold;
-            color: #db4455;
-            min-height: 40px;
-            text-align: center;
-            border: 1px dashed #db4455;
+
+        .peek-container {
+            margin: 25px 0 10px 0;
+            padding: 25px;
+            background: linear-gradient(180deg, #1a1518, #111317);
+            border-radius: 12px;
+            min-height: 70px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border: 1px solid #3d1a21;
         }
+
+        #resultText {
+            font-size: 32px;
+            font-weight: 800;
+            color: #ffffff;
+            transition: all 0.1s ease-out;
+            text-shadow: 0 0 15px rgba(255,255,255,0.6);
+        }
+
+        .peeking {
+            filter: blur(6px);
+            opacity: 0.6;
+            transform: scale(0.9) skewX(-10deg);
+            color: var(--primary-color) !important;
+            text-shadow: 0 0 30px #ff3344 !important;
+        }
+
+        .peek-done {
+            animation: lightExplode 0.5s ease-out forwards;
+        }
+
+        @keyframes lightExplode {
+            0% { transform: scale(1.3); filter: blur(2px); color: #ff8899; }
+            100% { transform: scale(1); filter: blur(0); color: #ffffff; text-shadow: 0 0 20px rgba(255,51,68,0.8); }
+        }
+
         .info-text {
             font-size: 13px;
-            color: #777;
-            margin-top: 3px;
+            color: var(--text-muted);
+            margin-top: 5px;
         }
-        /* 右欄中獎名單列表 */
+
         .history-list {
             padding-left: 0;
             list-style: none;
+            margin: 0;
+            max-height: 450px;
+            overflow-y: auto;
         }
         .history-list li {
-            padding: 10px;
-            border-bottom: 1px dashed #eee;
-            color: #333;
-            font-size: 15px;
+            padding: 12px;
+            border-bottom: 1px solid #1f2635;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            animation: fadeInRow 0.4s ease;
+        }
+        @keyframes fadeInRow {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
         }
         .history-list li span.prize-tag {
-            background: #db4455;
-            color: white;
-            padding: 2px 6px;
-            border-radius: 4px;
-            font-size: 12px;
-            margin-right: 8px;
+            background: linear-gradient(90deg, rgba(255,51,68,0.15), rgba(255,51,68,0.05));
+            color: var(--primary-color);
+            border: 1px solid rgba(255,51,68,0.3);
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 600;
         }
         .history-list li span.winner-name {
             font-weight: bold;
+            color: #ffffff;
+            font-size: 16px;
         }
     </style>
 </head>
@@ -167,63 +307,151 @@
 
 <div class="main-layout">
     
-    <!-- 左欄：控制與抽獎面板 -->
+    <!-- 左欄 -->
     <div class="card left-panel">
-        <h2>🌺 彼岸花抽獎系統</h2>
+        <h2>🌺 <span>彼岸花</span> 抽獎系統</h2>
         
-        <!-- 1. 抽獎名單輸入（隨時可調整） -->
+        <!-- 1. 名單輸入 -->
         <div class="form-group">
-            <label>👥 抽獎名單（一人一行，輸入時會自動去重）：</label>
-            <textarea id="namesInput" placeholder="小明&#10;小華&#10;小白" onblur="validateAndCleanNames()"></textarea>
+            <label>👥 抽獎名單列表（一人一行）：</label>
+            <textarea id="namesInput" placeholder="請在此輸入名單..." onblur="cleanAndDuplicateCheck()"></textarea>
             <div class="info-text" id="poolCount">目前名單人數：0 人</div>
         </div>
 
-        <!-- 2. 獎項自訂區域 -->
+        <!-- 2. 獎項自訂（輸入時自動同步下方字卡） -->
         <div class="form-group">
-            <label>🎁 獎項清單設定：</label>
+            <label>🎁 獎項與數量設定：</label>
             <div id="prizeSetupContainer">
                 <div class="prize-input-row">
-                    <input type="text" class="prize-name" placeholder="例如：頭獎 iPhone" style="flex: 2;" value="頭獎 iPhone">
-                    <input type="number" class="prize-qty" placeholder="數量" style="flex: 1;" min="1" value="1">
-                </div>
-                <div class="prize-input-row">
-                    <input type="text" class="prize-name" placeholder="例如：二獎 現金千元" style="flex: 2;" value="二獎 現金千元">
-                    <input type="number" class="prize-qty" placeholder="數量" style="flex: 1;" min="1" value="3">
+                    <input type="text" class="prize-name" placeholder="獎項名稱 (如：特獎 iPhone)" style="flex: 3;" oninput="autoSyncPrizeCards()">
+                    <input type="number" class="prize-qty" placeholder="數量" style="flex: 1;" min="0" value="1" oninput="autoSyncPrizeCards()">
+                    <button class="btn-del" onclick="removePrizeRow(this)">❌</button>
                 </div>
             </div>
-            <button class="btn-add" onclick="addPrizeRow()">＋增加獎項欄位</button>
+            <button class="btn-add" onclick="addPrizeRow()">＋ 增加新獎項</button>
         </div>
 
-        <!-- 3. 目前要抽的獎項選擇 -->
+        <!-- 3. ✨ 炫砲亮燈選擇區 -->
         <div class="form-group">
-            <label>🎯 當前欲抽取獎項：</label>
-            <button class="btn-add" style="float: right; margin-bottom: 5px;" onclick="refreshPrizeSelect()">🔄 更新/鎖定獎項選單</button>
-            <select id="prizeSelect">
-                <option value="">-- 請先點選上方按鈕更新獎項 --</option>
-            </select>
+            <label>🎯 當前欲抽取獎項（直接點擊字卡選擇）：</label>
+            <div class="prize-cards-container" id="prizeCardsBoard">
+                <!-- 動態生成的霓虹字卡會出現在這裡 -->
+            </div>
         </div>
 
-        <button id="drawBtn" class="draw-btn" onclick="startDraw()">✨ 開始抽獎 ✨</button>
+        <button id="drawBtn" class="draw-btn" onclick="startPeekDraw()">✨ 瞇牌抽獎 ✨</button>
         
-        <div id="result">準備抽獎...</div>
+        <div class="peek-container">
+            <div id="resultText">等待開獎...</div>
+        </div>
     </div>
 
-    <!-- 右欄：中獎名單紀錄 -->
+    <!-- 右欄 -->
     <div class="card right-panel">
         <h3>🏆 中獎名單紀錄</h3>
-        <ul class="history-list" id="historyList">
-            <!-- 中獎紀錄會動態生成在這裡 -->
-        </ul>
+        <ul class="history-list" id="historyList"></ul>
     </div>
 
 </div>
 
 <script>
-// 儲存目前記憶體中的名單與獎項庫
+// 全局追蹤狀態
 let prizeInventory = {};
+let selectedPrizeName = "";
 
-// 邏輯 2：自動過濾重複名單 + 提示
-function validateAndCleanNames() {
+// 核心優化：即時同步並渲染「亮燈字卡」
+function autoSyncPrizeCards() {
+    const names = document.querySelectorAll('.prize-name');
+    const qtys = document.querySelectorAll('.prize-qty');
+    const board = document.getElementById('prizeCardsBoard');
+    
+    // 清空舊狀態，但保留選取名稱
+    board.innerHTML = '';
+    prizeInventory = {};
+    let firstValidPrize = "";
+
+    names.forEach((node, index) => {
+        const pName = node.value.trim();
+        const pQty = parseInt(qtys[index].value);
+        
+        if (pName !== "") {
+            prizeInventory[pName] = isNaN(pQty) ? 0 : pQty;
+            if (!firstValidPrize) firstValidPrize = pName;
+
+            // 建立實體字卡
+            const card = document.createElement('div');
+            card.className = 'prize-badge-card';
+            if (prizeInventory[pName] <= 0) {
+                card.className += ' soldout'; // 抽完就灰化
+            }
+            
+            // 如果這張卡是目前被選中的，給他發光
+            if (pName === selectedPrizeName) {
+                card.className += ' active';
+            }
+
+            card.innerHTML = `
+                <span class="p-name">${pName}</span>
+                <span class="p-qty">剩餘 ${prizeInventory[pName]} 個</span>
+            `;
+            
+            // 點擊卡片直接切換選擇，自帶霓虹燈切換
+            card.onclick = function() {
+                if (prizeInventory[pName] > 0) {
+                    selectPrizeCard(pName);
+                }
+            };
+
+            board.appendChild(card);
+        }
+    });
+
+    // 防呆：如果原本選的獎項被刪了，或者第一次載入，自動選第一個有效的
+    if ((!selectedPrizeName || !prizeInventory[selectedPrizeName]) && firstValidPrize) {
+        selectPrizeCard(firstValidPrize);
+    }
+}
+
+// 變更目前選取的霓虹卡片
+function selectPrizeCard(prizeName) {
+    selectedPrizeName = prizeName;
+    
+    // 重新刷新字卡外觀樣式
+    const cards = document.querySelectorAll('.prize-badge-card');
+    cards.forEach(card => {
+        const nameSpan = card.querySelector('.p-name').innerText;
+        if (nameSpan === prizeName) {
+            card.classList.add('active');
+        } else {
+            card.classList.remove('active');
+        }
+    });
+}
+
+function addPrizeRow() {
+    const container = document.getElementById('prizeSetupContainer');
+    const row = document.createElement('div');
+    row.className = 'prize-input-row';
+    row.innerHTML = `
+        <input type="text" class="prize-name" placeholder="獎項名稱" style="flex: 3;" oninput="autoSyncPrizeCards()">
+        <input type="number" class="prize-qty" placeholder="數量" style="flex: 1;" min="0" value="1" oninput="autoSyncPrizeCards()">
+        <button class="btn-del" onclick="removePrizeRow(this)">❌</button>
+    `;
+    container.appendChild(row);
+    autoSyncPrizeCards();
+}
+
+function removePrizeRow(btn) {
+    const rows = document.querySelectorAll('.prize-input-row');
+    if (rows.length === 1) {
+        alert("請至少保留一個獎項設定欄位！");
+        return;
+    }
+    btn.parentElement.remove();
+    autoSyncPrizeCards();
+}
+
+function cleanAndDuplicateCheck() {
     const textarea = document.getElementById('namesInput');
     const rawNames = textarea.value.split('\n').map(n => n.trim()).filter(n => n !== "");
     
@@ -232,156 +460,118 @@ function validateAndCleanNames() {
     
     rawNames.forEach(name => {
         if (uniqueNames.includes(name)) {
-            if (!duplicates.includes(name)) {
-                duplicates.push(name);
-            }
+            if (!duplicates.includes(name)) duplicates.push(name);
         } else {
             uniqueNames.push(name);
         }
     });
     
-    // 如果有重複，跳出提示
     if (duplicates.length > 0) {
-        alert(`【提示】偵測到重複名單：\n${duplicates.join('、')}\n系統已自動為您過濾。`);
+        alert(`【⚠️ 偵測到重複名單】\n以下人員重複，已自動過濾：\n👉 ${duplicates.join('、')}`);
     }
     
-    // 將過濾後的乾淨名單放回輸入框中（實現隨時可調整）
     textarea.value = uniqueNames.join('\n');
     document.getElementById('poolCount').innerText = `目前名單人數：${uniqueNames.length} 人`;
+    return uniqueNames;
 }
 
-// 增加獎項輸入欄位
-function addPrizeRow() {
-    const container = document.getElementById('prizeSetupContainer');
-    const row = document.createElement('div');
-    row.className = 'prize-input-row';
-    row.innerHTML = `
-        <input type="text" class="prize-name" placeholder="獎項名稱" style="flex: 2;">
-        <input type="number" class="prize-qty" placeholder="數量" style="flex: 1;" min="1" value="1">
-    `;
-    container.appendChild(row);
-}
-
-// 將設定的獎項同步到下拉選單中
-function refreshPrizeSelect() {
-    const names = document.querySelectorAll('.prize-name');
-    const qtys = document.querySelectorAll('.prize-qty');
-    const select = document.getElementById('prizeSelect');
+function startPeekDraw() {
+    const textarea = document.getElementById('namesInput');
+    const drawBtn = document.getElementById('drawBtn');
+    const resultText = document.getElementById('resultText');
     
-    // 清空舊選單與舊庫存
-    select.innerHTML = '';
-    prizeInventory = {};
+    const currentPool = cleanAndDuplicateCheck();
     
-    let hasValidPrize = false;
+    if (currentPool.length === 0) {
+        alert("抽獎名單是空的，請先輸入名單！");
+        return;
+    }
     
-    names.forEach((node, index) => {
-        const pName = node.value.trim();
-        const pQty = parseInt(qtys[index].value) || 0;
+    // 確認有沒有選擇有效的亮燈獎項
+    if (!selectedPrizeName || !prizeInventory[selectedPrizeName] || prizeInventory[selectedPrizeName] <= 0) {
+        alert("請先點擊選取一個有庫存的獎項字卡！");
+        return;
+    }
+    
+    drawBtn.disabled = true;
+    resultText.className = "peeking";
+    
+    let counter = 0;
+    let speed = 60;
+    let timer;
+    
+    function peekingAnimation() {
+        const tempIndex = Math.floor(Math.random() * currentPool.length);
+        resultText.innerText = currentPool[tempIndex];
+        counter++;
         
-        if (pName !== "" && pQty > 0) {
-            prizeInventory[pName] = pQty;
-            
-            const opt = document.createElement('option');
-            opt.value = pName;
-            opt.innerText = `${pName} (剩餘 ${pQty} 個)`;
-            select.appendChild(opt);
-            hasValidPrize = true;
+        if (counter < 20) {
+            timer = setTimeout(peekingAnimation, speed);
+        } else if (counter < 32) {
+            speed += 25;
+            resultText.style.letterSpacing = (counter - 18) + "px";
+            timer = setTimeout(peekingAnimation, speed);
+        } else {
+            finalizeWinner(currentPool, selectedPrizeName);
+        }
+    }
+    
+    peekingAnimation();
+}
+
+function finalizeWinner(currentPool, targetPrize) {
+    const textarea = document.getElementById('namesInput');
+    const drawBtn = document.getElementById('drawBtn');
+    const resultText = document.getElementById('resultText');
+    
+    const winnerIndex = Math.floor(Math.random() * currentPool.length);
+    const winner = currentPool[winnerIndex];
+    
+    // 1. 扣除庫存並同步回上方的輸入框數值
+    prizeInventory[targetPrize]--;
+    const rows = document.querySelectorAll('.prize-input-row');
+    rows.forEach(row => {
+        const nameInput = row.querySelector('.prize-name');
+        const qtyInput = row.querySelector('.prize-qty');
+        if (nameInput.value.trim() === targetPrize) {
+            qtyInput.value = prizeInventory[targetPrize];
         }
     });
     
-    if (!hasValidPrize) {
-        select.innerHTML = '<option value="">-- 尚未設定有效獎項 --</option>';
-        alert("請至少填寫一個獎項名稱與數量！");
+    // 2. 名單移除
+    currentPool.splice(winnerIndex, 1);
+    textarea.value = currentPool.join('\n');
+    document.getElementById('poolCount').innerText = `目前名單人數：${currentPool.length} 人`;
+    
+    // 3. 瞇牌定格
+    resultText.style.letterSpacing = "1px";
+    resultText.className = "peek-done";
+    resultText.innerHTML = `🎉 中獎：${winner}`;
+    
+    // 4. 右側寫入歷史
+    const historyList = document.getElementById('historyList');
+    const li = document.createElement('li');
+    li.innerHTML = `
+        <span class="prize-tag">${targetPrize}</span>
+        <span class="winner-name">${winner}</span>
+    `;
+    historyList.insertBefore(li, historyList.firstChild);
+    
+    // 5. 重新渲染字卡狀態（如果抽完了，字卡會自動灰化熄燈）
+    autoSyncPrizeCards();
+    
+    // 6. 防呆自動切換：如果剛剛抽的獎項沒了，自動幫主辦人亮燈下一個有庫存的獎項
+    if (prizeInventory[targetPrize] <= 0) {
+        selectedPrizeName = ""; // 清空
+        autoSyncPrizeCards();   // 讓它自動去抓第一個有效的
     }
+    
+    drawBtn.disabled = false;
 }
 
-// 核心抽獎功能
-function startDraw() {
-    const textarea = document.getElementById('namesInput');
-    const select = document.getElementById('prizeSelect');
-    const drawBtn = document.getElementById('drawBtn');
-    
-    // 先做一次最新的名單清理
-    validateAndCleanNames();
-    
-    // 重新撈取最新的名單陣列（實現隨時可調整名單）
-    let currentPool = textarea.value.split('\n').map(n => n.trim()).filter(n => n !== "");
-    
-    if (currentPool.length === 0) {
-        alert("名單是空的，請先輸入名單！");
-        return;
-    }
-    
-    // 檢查有沒有選獎項
-    const selectedPrize = select.value;
-    if (!selectedPrize || !prizeInventory[selectedPrize] || prizeInventory[selectedPrize] <= 0) {
-        alert("請選擇一個還有剩餘數量的有效獎項！");
-        return;
-    }
-    
-    // 鎖定按鈕跑動畫
-    drawBtn.disabled = true;
-    
-    let counter = 0;
-    const interval = setInterval(() => {
-        const tempIndex = Math.floor(Math.random() * currentPool.length);
-        document.getElementById('result').innerText = `🎲 ${currentPool[tempIndex]}`;
-        counter++;
-        
-        if (counter > 15) {
-            clearInterval(interval);
-            
-            // 隨機決定中獎者
-            const winnerIndex = Math.floor(Math.random() * currentPool.length);
-            const winner = currentPool[winnerIndex];
-            
-            // 邏輯 3：扣除獎項數量
-            prizeInventory[selectedPrize]--;
-            
-            // 邏輯 2：將中獎者從抽獎名單移除
-            currentPool.splice(winnerIndex, 1);
-            textarea.value = currentPool.join('\n'); // 寫回輸入框
-            document.getElementById('poolCount').innerText = `目前名單人數：${currentPool.length} 人`;
-            
-            // 顯示當前中獎結果
-            document.getElementById('result').innerHTML = `🎉 恭喜中獎：<span style="color:#db4455">${winner}</span>`;
-            
-            // 邏輯 4：將紀錄更新在右邊，顯示「中什麼獎」
-            const historyList = document.getElementById('historyList');
-            const li = document.createElement('li');
-            li.innerHTML = `<span class="prize-tag">${selectedPrize}</span> <span class="winner-name">${winner}</span>`;
-            historyList.insertBefore(li, historyList.firstChild); // 最新中獎顯示在最上面
-            
-            // 更新下拉選單中的殘餘數量顯示
-            updateSelectDisplay();
-            
-            // 解鎖按鈕
-            drawBtn.disabled = false;
-        }
-    }, 100);
-}
-
-// 抽完獎後，只更新選單上的文字，不破壞目前的庫存狀態
-function updateSelectDisplay() {
-    const select = document.getElementById('prizeSelect');
-    const currentSelected = select.value;
-    
-    select.innerHTML = '';
-    for (let prize in prizeInventory) {
-        if (prizeInventory[prize] >= 0) { // 即使是 0 也顯示，方便得知抽完了
-            const opt = document.createElement('option');
-            opt.value = prize;
-            opt.innerText = `${prize} (剩餘 ${prizeInventory[prize]} 個)`;
-            if (prize === currentSelected) opt.selected = true;
-            select.appendChild(opt);
-        }
-    }
-}
-
-// 網頁載入時初始化一次人數與選單
 window.onload = function() {
-    validateAndCleanNames();
-    refreshPrizeSelect();
+    cleanAndDuplicateCheck();
+    autoSyncPrizeCards();
 };
 </script>
 
