@@ -817,6 +817,282 @@
         }
         .btn-export:hover { color: var(--gold); border-color: rgba(201,151,58,.4); }
 
+        /* ═══════════════════════════════════════════════
+           ─── Blind Box Sidebar Section ───────────────
+           ═══════════════════════════════════════════════ */
+        .bb-enable-row { display:flex; align-items:center; margin-bottom:4px; }
+        .bb-sub-label {
+            font-size:11px; font-weight:700; color:var(--gold);
+            letter-spacing:2px; margin-bottom:4px; display:block;
+        }
+        .bb-config { display:flex; flex-direction:column; gap:10px; margin-top:8px; }
+        .bb-checked-list {
+            display:flex; flex-direction:column; gap:3px;
+            max-height:108px; overflow-y:auto;
+            background:var(--bg-inset); border-radius:6px;
+            padding:6px 8px; border:1px solid var(--border);
+        }
+        .bb-checked-list:empty::after {
+            content:'（尚無正常獎項）'; font-size:12px; color:var(--text-sub);
+        }
+        .bb-checked-list::-webkit-scrollbar { width:3px; }
+        .bb-checked-list::-webkit-scrollbar-thumb { background:var(--border-hi); border-radius:3px; }
+        .bb-checked-item {
+            display:flex; align-items:center; gap:6px;
+            font-size:12px; color:var(--text-sub); cursor:pointer; padding:1px 0;
+        }
+        .bb-checked-item input[type=checkbox] {
+            width:13px; height:13px; accent-color:var(--gold); cursor:pointer; flex-shrink:0;
+        }
+        .bb-excl-rows { display:flex; flex-direction:column; gap:5px; }
+        .bb-excl-row  { display:flex; gap:5px; align-items:center; }
+        .bb-excl-row input[type=text]   { flex:3; }
+        .bb-excl-row input[type=number] { flex:1; min-width:48px; }
+        .bb-lock-btn {
+            background:linear-gradient(180deg,#2a1e06 0%,#150e03 100%);
+            color:var(--gold-light); border:1px solid rgba(201,151,58,.45);
+            border-radius:6px; padding:10px 14px; font-size:13px;
+            font-family:inherit; cursor:pointer; width:100%;
+            transition:all .2s; letter-spacing:1px;
+        }
+        .bb-lock-btn:hover { background:linear-gradient(180deg,#3a2a0a 0%,#1a1205 100%); box-shadow:0 0 12px var(--gold-glow); }
+        .bb-locked-info {
+            background:rgba(201,151,58,.05); border:1px solid rgba(201,151,58,.18);
+            border-radius:8px; padding:10px 12px; font-size:12px;
+            color:var(--text-sub); line-height:1.7;
+        }
+        .bb-lock-icon { font-size:11px; color:var(--gold); letter-spacing:2px; margin-bottom:4px; display:block; }
+        .bb-locked-prize { color:var(--gold-light); font-weight:700; display:inline-block; font-size:12px; }
+        .bb-unlock-btn {
+            background:transparent; color:var(--text-sub);
+            border:1px dashed var(--border-hi); border-radius:6px;
+            padding:7px 12px; font-size:12px; font-family:inherit;
+            cursor:pointer; width:100%; margin-top:5px; transition:all .2s;
+        }
+        .bb-unlock-btn:hover { color:var(--crimson-lit); border-color:rgba(212,42,58,.4); }
+
+        /* badge on normal prize tabs when included in blind box pool */
+        .t-bb-badge {
+            font-size:9px; color:var(--gold);
+            background:rgba(201,151,58,.12); border:1px solid rgba(201,151,58,.25);
+            border-radius:3px; padding:1px 4px; letter-spacing:.5px;
+            margin-top:3px; display:block; line-height:1.4;
+        }
+
+        /* ??? blind box prize tab */
+        .prize-tab.bb-main-tab {
+            background:
+                repeating-linear-gradient(0deg,
+                    transparent, transparent 19px,
+                    rgba(212,42,58,.05) 19px, rgba(212,42,58,.05) 20px),
+                linear-gradient(180deg, #1a080f 0%, #0d0508 100%);
+            border-color:rgba(212,42,58,.35);
+            border-top-color:rgba(212,42,58,.7);
+        }
+        .prize-tab.bb-main-tab::before { background:var(--crimson-lit); opacity:.6; }
+        .prize-tab.bb-main-tab:hover:not(.soldout) {
+            border-color:var(--crimson-lit); border-top-color:#ff5070;
+            box-shadow:0 8px 20px rgba(0,0,0,.5), 0 0 14px var(--crimson-glow);
+        }
+        .prize-tab.bb-main-tab.active {
+            border-color:var(--crimson-lit); border-top-color:#ff5070;
+            background:
+                repeating-linear-gradient(0deg,
+                    transparent, transparent 19px,
+                    rgba(212,42,58,.09) 19px, rgba(212,42,58,.09) 20px),
+                linear-gradient(180deg, #250e15 0%, #150810 100%);
+            box-shadow:0 0 0 1px rgba(212,42,58,.3), 0 8px 24px var(--crimson-glow);
+        }
+        .prize-tab.bb-main-tab .t-name { color:#e08898; }
+        .prize-tab.bb-main-tab.active .t-name { color:#ffaabb; }
+        .prize-tab.bb-main-tab .t-qty  { color:rgba(212,42,58,.7); }
+        .prize-tab.bb-main-tab.active .t-qty { color:var(--crimson-lit); font-weight:600; }
+
+        /* ═══════════════════════════════════════════════
+           ─── Blind Box Modal Overlay ─────────────────
+           ═══════════════════════════════════════════════ */
+        .bb-modal {
+            position:fixed; inset:0;
+            background:rgba(3,4,9,.93);
+            backdrop-filter:blur(18px); -webkit-backdrop-filter:blur(18px);
+            z-index:9600;
+            display:flex; align-items:center; justify-content:center;
+            animation:bbFadeIn .4s ease;
+        }
+        @keyframes bbFadeIn { from{opacity:0} to{opacity:1} }
+        .bb-modal-inner {
+            background:rgba(10,12,20,.97);
+            border:1px solid rgba(201,151,58,.22);
+            border-radius:20px; padding:32px 44px 28px;
+            max-width:92vw; max-height:92vh; overflow-y:auto;
+            box-shadow:0 0 0 1px rgba(201,151,58,.08), 0 32px 90px rgba(0,0,0,.85);
+            display:flex; flex-direction:column; align-items:center; gap:22px;
+            position:relative;
+        }
+        /* corner ornaments */
+        .bb-modal-inner::before, .bb-modal-inner::after {
+            content:''; position:absolute;
+            width:22px; height:22px;
+            border-color:var(--gold); border-style:solid; opacity:.35; pointer-events:none;
+        }
+        .bb-modal-inner::before { top:14px; left:14px; border-width:2px 0 0 2px; }
+        .bb-modal-inner::after  { bottom:14px; right:14px; border-width:0 2px 2px 0; }
+        /* gold shimmer line on top */
+        .bb-modal-inner > .bb-top-line {
+            position:absolute; top:0; left:0; right:0; height:3px; border-radius:20px 20px 0 0;
+            background:linear-gradient(90deg,transparent,var(--gold),var(--gold-light),var(--gold),transparent);
+            background-size:200% auto; animation:shimmer 3s linear infinite;
+        }
+        .bb-announce { text-align:center; }
+        .bb-announce-label { font-size:13px; color:var(--gold); letter-spacing:4px; font-weight:700; }
+        .bb-announce-winner {
+            font-family:'ZCOOL XiaoWei','Noto Serif TC',serif;
+            font-size:44px; color:#fff;
+            text-shadow:0 0 30px var(--gold-light), 0 0 80px var(--gold-glow);
+            letter-spacing:4px; margin:6px 0 0;
+            animation:winPop .55s cubic-bezier(.175,.885,.32,1.275) both;
+        }
+        .bb-announce-sub { font-size:13px; color:var(--text-sub); letter-spacing:2px; margin-top:4px; }
+
+        /* Tablets grid – auto-fit wrapping */
+        .bb-tablets-grid {
+            display:flex; flex-wrap:wrap;
+            gap:18px; justify-content:center; padding:4px 8px;
+            max-width:700px;
+        }
+
+        /* Individual wooden tablet */
+        .bb-tablet {
+            width:108px; height:168px;
+            perspective:900px; cursor:pointer;
+            flex-shrink:0;
+        }
+        .bb-tablet-inner {
+            width:100%; height:100%; position:relative;
+            transform-style:preserve-3d;
+            transition:transform .72s cubic-bezier(.4,0,.2,1);
+        }
+        .bb-tablet.flipped .bb-tablet-inner { transform:rotateY(180deg); }
+        .bb-tablet-front, .bb-tablet-back {
+            position:absolute; inset:0;
+            backface-visibility:hidden; -webkit-backface-visibility:hidden;
+            border-radius:4px 4px 8px 8px;
+            display:flex; flex-direction:column;
+            align-items:center; justify-content:center; gap:8px;
+        }
+        /* Front face: dark wood */
+        .bb-tablet-front {
+            background:
+                repeating-linear-gradient(0deg,
+                    transparent, transparent 13px,
+                    rgba(201,151,58,.05) 13px, rgba(201,151,58,.05) 14px),
+                linear-gradient(180deg, #2a1e08 0%, #130b03 100%);
+            border:2px solid #5a3e18;
+            border-top:4px solid rgba(201,151,58,.5);
+            box-shadow:inset 0 0 24px rgba(0,0,0,.5), 0 6px 18px rgba(0,0,0,.55);
+        }
+        /* rope knot above tablet */
+        .bb-tablet-front::before {
+            content:''; position:absolute;
+            top:-4px; left:50%; transform:translateX(-50%);
+            width:22px; height:4px;
+            background:var(--gold); opacity:.4; border-radius:2px;
+        }
+        .bb-tablet-kanji {
+            font-family:'Noto Serif TC',serif;
+            font-size:30px; font-weight:900;
+            color:var(--gold); opacity:.55; line-height:1;
+        }
+        .bb-tablet-ques {
+            font-family:'Noto Serif TC',serif;
+            font-size:15px; font-weight:700;
+            color:var(--text-sub); letter-spacing:3px;
+        }
+        /* hover shine on face-down tablet */
+        .bb-tablet:not(.flipped):hover .bb-tablet-front {
+            border-color:rgba(201,151,58,.55);
+            border-top-color:var(--gold-light);
+            box-shadow:0 0 18px var(--gold-glow), inset 0 0 16px rgba(0,0,0,.4), 0 6px 18px rgba(0,0,0,.55);
+        }
+        .bb-tablet.flipped { cursor:default; }
+
+        /* Back face: light wood / prize */
+        .bb-tablet-back {
+            transform:rotateY(180deg);
+            background:
+                repeating-linear-gradient(0deg,
+                    transparent, transparent 13px,
+                    rgba(201,151,58,.07) 13px, rgba(201,151,58,.07) 14px),
+                linear-gradient(180deg, #2a2208 0%, #18140a 100%);
+            border:2px solid rgba(201,151,58,.38);
+            border-top:4px solid var(--gold-light);
+            box-shadow:0 0 0 1px rgba(201,151,58,.12), 0 6px 18px rgba(0,0,0,.5);
+        }
+        /* Winner back: crimson glow */
+        .bb-tablet-back.winner-back {
+            background:
+                repeating-linear-gradient(0deg,
+                    transparent, transparent 13px,
+                    rgba(212,42,58,.06) 13px, rgba(212,42,58,.06) 14px),
+                linear-gradient(180deg, #2a0a0f 0%, #1a0608 100%);
+            border:2px solid rgba(212,42,58,.5);
+            border-top:4px solid var(--crimson-lit);
+            box-shadow:0 0 22px var(--crimson-glow), 0 6px 18px rgba(0,0,0,.5);
+            animation:bbWinTabGlow 1.5s ease-in-out infinite;
+        }
+        @keyframes bbWinTabGlow {
+            0%,100% { box-shadow:0 0 18px var(--crimson-glow); }
+            50%      { box-shadow:0 0 36px rgba(212,42,58,.65), 0 0 55px var(--crimson-glow); }
+        }
+        .bb-prize-icon { font-size:22px; line-height:1; }
+        .bb-prize-name {
+            font-family:'Noto Serif TC',serif;
+            font-size:13px; font-weight:700; color:var(--gold-light);
+            text-align:center; padding:0 6px; line-height:1.35;
+            word-break:break-all;
+        }
+        .bb-tablet-back.winner-back .bb-prize-name {
+            color:#fff; text-shadow:0 0 14px var(--crimson-lit);
+        }
+        .bb-winner-mark {
+            font-size:10px; color:var(--crimson-lit);
+            letter-spacing:1px; font-weight:700;
+        }
+
+        /* Action bar after all tablets revealed */
+        .bb-action-bar {
+            display:flex; flex-direction:column; align-items:center; gap:8px;
+        }
+        .bb-result-line {
+            font-size:14px; color:var(--text-sub); letter-spacing:2px; text-align:center;
+        }
+        .bb-result-line strong { color:#fff; font-size:16px; }
+        .bb-confirm-draw-btn {
+            font-family:'Noto Serif TC',serif;
+            background:linear-gradient(180deg, #c0202e 0%, #8a0f1c 100%);
+            color:#ffe8d0; border:2px solid rgba(180,30,50,.5);
+            padding:13px 50px; border-radius:4px;
+            font-size:17px; font-weight:900;
+            letter-spacing:8px; text-indent:8px;
+            cursor:pointer;
+            box-shadow:0 4px 24px var(--crimson-glow), inset 0 1px 0 rgba(255,200,160,.15);
+            transition:all .3s; position:relative; overflow:hidden;
+            animation:bbBtnPulse 2s ease-in-out infinite;
+        }
+        @keyframes bbBtnPulse {
+            0%,100% { box-shadow:0 4px 24px var(--crimson-glow); }
+            50%      { box-shadow:0 6px 38px rgba(212,42,58,.55), 0 0 22px rgba(212,42,58,.3); }
+        }
+        .bb-confirm-draw-btn::before {
+            content:''; position:absolute; inset:5px;
+            border:1px solid rgba(255,180,140,.15); border-radius:1px; pointer-events:none;
+        }
+        .bb-confirm-draw-btn:hover {
+            transform:translateY(-2px);
+            box-shadow:0 8px 36px var(--crimson-glow), inset 0 1px 0 rgba(255,200,160,.2);
+        }
+        .bb-hint-line { font-size:11px; color:var(--text-sub); letter-spacing:2px; }
+
         /* ─── RWD ─── */
         @media (max-width: 768px) {
             html, body { overflow: auto; }
@@ -866,6 +1142,11 @@
             <div class="sec-lbl">🎁 獎項設定</div>
             <div id="prizeRows"></div>
             <button class="btn-ghost">＋ 新增獎項</button>
+        </div>
+
+        <!-- ── Blind Box Section (rendered by JS) ── -->
+        <div id="bbSection">
+            <!-- renderBBSection() populates this -->
         </div>
 
         <div class="setting-row">
@@ -981,10 +1262,29 @@ let redoStack      = [];
 let quickMode      = false;
 let pendingSpecialEvent = null;
 
+// ─── Blind Box State ─────────────────────────────────────────
+const BLIND_BOX_PRIZE_ID = '__blindbox__';
+const BB_CACHE_KEY        = 'bh_blindbox';
+
+let blindBox = {
+    enabled:       false,
+    checkedPrizes: [],   // names of normal prizes ticked into pool
+    exclusives:    [],   // [{name, qty}] — exclusive-only prizes
+    locked:        false,
+};
+
+// BB runtime (not persisted)
+let bbPhase         = 'idle'; // 'idle' | 'awaiting_flip' | 'revealed'
+let bbWinnerName    = null;
+let bbWinnerPrize   = null;   // pre-determined prize for current winner
+let bbTabletAssign  = [];     // [{prize, isWinner}] indexed by tablet position
+let bbClickedTablet = -1;     // tablet index clicked by the winner
+
 // ─── Init ────────────────────────────────────────────────────
 window.addEventListener('load', init);
 
 function init() {
+    loadBBCache();   // Must run BEFORE loadCache (which calls syncPrizeTabs)
     loadCache();
 
     document.getElementById('namesInput').addEventListener('input', onNameInput);
@@ -994,6 +1294,7 @@ function init() {
     document.getElementById('undoBtn').addEventListener('click', undoLastDraw);
     document.getElementById('redoBtn').addEventListener('click', redoLastDraw);
     document.getElementById('exportBtn').addEventListener('click', exportHistory);
+    document.getElementById('bbConfirmDrawBtn').addEventListener('click', finalizeBBDraw);
     document.getElementById('autoRemoveToggle').addEventListener('change', e => {
         autoRemove = e.target.checked;
         saveCacheDebounced();
@@ -1039,9 +1340,13 @@ function init() {
 }
 
 document.addEventListener('keydown', e => {
-    if ((e.key === 'k' || e.key === 'K') && (e.ctrlKey || e.metaKey) && !isDrawing) {
+    if ((e.key === 'k' || e.key === 'K') && (e.ctrlKey || e.metaKey)) {
         e.preventDefault();
-        pendingSpecialEvent = Math.random() < 0.5 ? 'fakeDecree' : 'intercept';
+        // ── Blind box decoupling: Ctrl+K is completely ignored during any BB phase ──
+        if (bbPhase !== 'idle') return;
+        if (!isDrawing) {
+            pendingSpecialEvent = Math.random() < 0.5 ? 'fakeDecree' : 'intercept';
+        }
         return;
     }
     if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
@@ -1074,10 +1379,11 @@ function normalizeHistory(list) {
     return list
         .filter(item => item && typeof item === 'object')
         .map(item => ({
-            prize: item.prize || '—',
+            prize:     item.prize     || '—',
             realPrize: item.realPrize || '',
-            winner: item.winner || '',
-            ts: typeof item.ts === 'number' ? item.ts : null
+            winner:    item.winner    || '',
+            blindBox:  !!item.blindBox,
+            ts:        typeof item.ts === 'number' ? item.ts : null
         }));
 }
 
@@ -1092,6 +1398,9 @@ function loadCache() {
     quickMode  = localStorage.getItem(KEYS.quickMode)  === 'true';
     batchCount = clamp(Number.isFinite(savedBatch) ? savedBatch : 1, 1, 50);
 
+    // If the saved selected prize was the BB id but BB is no longer locked, clear it
+    if (selectedPrize === BLIND_BOX_PRIZE_ID && !blindBox.locked) selectedPrize = '';
+
     document.getElementById('namesInput').value = names;
     document.getElementById('autoRemoveToggle').checked = autoRemove;
     document.getElementById('quickModeToggle').checked  = quickMode;
@@ -1104,8 +1413,15 @@ function loadCache() {
 
     historyData = history;
     renderHistory();
-    syncPrizeTabs();
+    syncPrizeTabs();     // syncPrizeTabs also calls renderBBSection() & updateBBCheckedList()
     resetStage();
+
+    // Restore batchInput state if BB prize was selected
+    if (selectedPrize === BLIND_BOX_PRIZE_ID) {
+        document.getElementById('batchInput').value    = 1;
+        document.getElementById('batchInput').disabled = true;
+        batchCount = 1;
+    }
 }
 
 function saveCache() {
@@ -1126,6 +1442,7 @@ function saveCacheDebounced() {
 function resetAll() {
     if (confirm('⚠️ 確定重設所有資料？此操作不可復原。')) {
         Object.values(KEYS).forEach(k => localStorage.removeItem(k));
+        localStorage.removeItem(BB_CACHE_KEY);
         location.reload();
     }
 }
@@ -1250,20 +1567,33 @@ function syncPrizeTabs() {
         Object.fromEntries(Object.entries(seen).map(([name, meta]) => [name, meta.total]))
     );
 
-    if (selectedPrize && (!Object.hasOwn(prizeInventory, selectedPrize) || prizeInventory[selectedPrize] <= 0)) {
+    // Clear selectedPrize if it's gone or exhausted —
+    // but never clear it just because it's the blind box virtual prize
+    if (selectedPrize && selectedPrize !== BLIND_BOX_PRIZE_ID &&
+        (!Object.hasOwn(prizeInventory, selectedPrize) || prizeInventory[selectedPrize] <= 0)) {
+        selectedPrize = '';
+    }
+    // Clear blind box prize selection if BB is no longer locked or pool is empty
+    if (selectedPrize === BLIND_BOX_PRIZE_ID &&
+        (!blindBox.locked || buildBBWeightedPool().length === 0)) {
         selectedPrize = '';
     }
 
+    updateBBCheckedList();   // keep checkbox list in sync when prizes change
+    // Only re-render full BB section when locked (static summary, no input fields)
+    // — avoids focus-loss while typing in BB config form
+    if (blindBox.locked) renderBBSection();
     renderTabs();
     updateInfoBar();
     saveCacheDebounced();
 }
 
 function renderTabs() {
-    const board = document.getElementById('prizeTabs');
+    const board   = document.getElementById('prizeTabs');
     board.innerHTML = '';
     const entries = Object.entries(prizeInventory);
-    if (entries.length === 0) {
+
+    if (entries.length === 0 && !blindBox.locked) {
         board.innerHTML = '<div class="no-prize-hint">尚未設定任何獎項</div>';
         return;
     }
@@ -1271,30 +1601,69 @@ function renderTabs() {
     entries.forEach(([name, qty]) => {
         const soldout = qty <= 0;
         const active  = name === selectedPrize;
+        // Badge: show when this prize is included in a locked blind box pool
+        const inBBPool = blindBox.locked && blindBox.checkedPrizes.includes(name);
+
         const tab = document.createElement('button');
-        tab.type = 'button';
+        tab.type  = 'button';
         tab.className = 'prize-tab' + (soldout ? ' soldout' : '') + (active ? ' active' : '');
         if (soldout) tab.disabled = true;
         tab.setAttribute('aria-pressed', active ? 'true' : 'false');
         tab.setAttribute('aria-label', `${name}，${soldout ? '已抽完' : `剩餘 ${qty} 個`}`);
-        tab.innerHTML = `<span class="t-name">${esc(name)}</span>
-                         <span class="t-qty">${soldout ? '已抽完' : `剩 ${qty} 個`}</span>`;
+        tab.innerHTML = `
+            <span class="t-name">${esc(name)}</span>
+            <span class="t-qty">${soldout ? '已抽完' : `剩 ${qty} 個`}</span>
+            ${inBBPool ? '<span class="t-bb-badge">📦 盲盒池</span>' : ''}`;
         if (!soldout) tab.addEventListener('click', () => selectPrize(name));
         board.appendChild(tab);
     });
+
+    // ── Add "???" blind box tab ──
+    if (blindBox.locked) {
+        const pool    = buildBBWeightedPool();
+        const bbQty   = pool.length;
+        const soldout = bbQty <= 0;
+        const active  = selectedPrize === BLIND_BOX_PRIZE_ID;
+        const tab = document.createElement('button');
+        tab.type  = 'button';
+        tab.className = 'prize-tab bb-main-tab' + (soldout ? ' soldout' : '') + (active ? ' active' : '');
+        if (soldout) tab.disabled = true;
+        tab.setAttribute('aria-pressed', active ? 'true' : 'false');
+        tab.setAttribute('aria-label', `神秘盲盒，${soldout ? '已抽完' : `剩 ${bbQty} 抽`}`);
+        tab.innerHTML = `
+            <span class="t-name">???</span>
+            <span class="t-qty">${soldout ? '已抽完' : `盲盒 ${bbQty} 抽`}</span>`;
+        if (!soldout) tab.addEventListener('click', () => selectPrize(BLIND_BOX_PRIZE_ID));
+        board.appendChild(tab);
+    }
 }
 
 function selectPrize(name) {
     selectedPrize = name;
+    const batchEl = document.getElementById('batchInput');
+    if (name === BLIND_BOX_PRIZE_ID) {
+        // Blind box is always single-draw — lock the batch input
+        batchCount       = 1;
+        batchEl.value    = 1;
+        batchEl.disabled = true;
+    } else if (!isDrawing) {
+        batchEl.disabled = false;
+    }
     renderTabs();
     updateInfoBar();
     saveCacheDebounced();
 }
 
 function updateInfoBar() {
+    if (selectedPrize === BLIND_BOX_PRIZE_ID) {
+        const pool = buildBBWeightedPool();
+        document.getElementById('infoName').textContent = '神秘盲盒 ???';
+        document.getElementById('infoQty').textContent  = pool.length + ' 抽';
+        return;
+    }
     const has = selectedPrize && Object.hasOwn(prizeInventory, selectedPrize);
     document.getElementById('infoName').textContent = has ? selectedPrize : '—';
-    document.getElementById('infoQty').textContent = has ? prizeInventory[selectedPrize] + ' 個' : '—';
+    document.getElementById('infoQty').textContent  = has ? prizeInventory[selectedPrize] + ' 個' : '—';
 }
 
 // ─── History ─────────────────────────────────────────────────
@@ -1304,27 +1673,31 @@ function renderHistory() {
 
     const grouped = new Map();
     for (let i = historyData.length - 1; i >= 0; i--) {
-        const item = historyData[i];
+        const item      = historyData[i];
         const prizeName = item.prize || '—';
         if (!grouped.has(prizeName)) grouped.set(prizeName, []);
-        grouped.get(prizeName).push(item.winner || '');
+        grouped.get(prizeName).push(item);   // push whole item, not just winner name
     }
 
-    grouped.forEach((winners, prizeName) => {
+    grouped.forEach((items, prizeName) => {
         const group = document.createElement('div');
         group.className = 'history-group';
         group.innerHTML = `
             <div class="history-group-hdr">
                 <span class="hi-prize">${esc(prizeName)}</span>
-                <span class="history-count">${winners.length} 人</span>
+                <span class="history-count">${items.length} 人</span>
             </div>
             <ul class="history-group-list"></ul>
         `;
         const list = group.querySelector('.history-group-list');
-        winners.forEach((winner, idx) => {
+        items.forEach((item, idx) => {
             const li = document.createElement('li');
             li.className = 'history-item';
-            li.innerHTML = `<span class="draw-seq">${idx + 1}.</span><span class="hi-winner">${esc(winner)}</span>`;
+            // 📦 badge for blind box winners (shown after reveal — no spoiler risk)
+            li.innerHTML = `
+                <span class="draw-seq">${idx + 1}.</span>
+                <span class="hi-winner">${esc(item.winner || '')}</span>
+                ${item.blindBox ? '<span style="font-size:10px;opacity:.6;flex-shrink:0" title="神秘盲盒開獎">📦</span>' : ''}`;
             list.appendChild(li);
         });
         groupsEl.appendChild(group);
@@ -1360,6 +1733,19 @@ function exportHistory() {
 function startDraw() {
     if (isDrawing) return;
 
+    // ── Blind box draw path (fully independent from normal flow) ──
+    if (selectedPrize === BLIND_BOX_PRIZE_ID) {
+        if (!blindBox.locked) { showToast('盲盒設定未鎖定！'); return; }
+        if (bbPhase !== 'idle') return;
+        const pool = buildBBWeightedPool();
+        if (!pool.length) { showToast('盲盒獎池已全數抽完！'); return; }
+        const names = [...new Set(getNames())];
+        if (!names.length) { showToast('名單是空的！'); return; }
+        startBBDraw();
+        return;
+    }
+
+    // ── Normal draw path ──
     const names = [...new Set(getNames())];
     const qty = prizeInventory[selectedPrize] || 0;
 
@@ -1952,10 +2338,531 @@ function esc(str) {
         .replace(/>/g, '&gt;');
 }
 
+// ═══════════════════════════════════════════════════════════════
+// ─── Blind Box Module ────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════
+
+// ── Cache ──────────────────────────────────────────────────────
+function loadBBCache() {
+    try {
+        const raw = localStorage.getItem(BB_CACHE_KEY);
+        if (!raw) return;
+        const data = JSON.parse(raw);
+        if (data && typeof data === 'object') {
+            blindBox.enabled       = !!data.enabled;
+            blindBox.locked        = !!data.locked;
+            blindBox.checkedPrizes = Array.isArray(data.checkedPrizes) ? data.checkedPrizes : [];
+            blindBox.exclusives    = Array.isArray(data.exclusives)
+                ? data.exclusives.filter(e => e && typeof e.name === 'string' && e.name.trim())
+                : [];
+        }
+    } catch (_) {}
+}
+
+function saveBBCache() {
+    localStorage.setItem(BB_CACHE_KEY, JSON.stringify(blindBox));
+}
+
+// ── Pool helpers ───────────────────────────────────────────────
+function buildBBWeightedPool() {
+    const pool = [];
+    blindBox.checkedPrizes.forEach(name => {
+        const qty = prizeInventory[name] || 0;
+        for (let i = 0; i < qty; i++) pool.push(name);
+    });
+    blindBox.exclusives.forEach(ex => {
+        const qty = Math.max(0, Number(ex.qty) || 0);
+        for (let i = 0; i < qty; i++) pool.push(ex.name);
+    });
+    return pool;
+}
+
+function getBBPrizeTypes() {
+    const types = [];
+    const seen  = new Set();
+    blindBox.checkedPrizes.forEach(name => {
+        if (!seen.has(name) && (prizeInventory[name] || 0) > 0) {
+            types.push(name); seen.add(name);
+        }
+    });
+    blindBox.exclusives.forEach(ex => {
+        if (ex.name && !seen.has(ex.name) && (Number(ex.qty) || 0) > 0) {
+            types.push(ex.name); seen.add(ex.name);
+        }
+    });
+    return types;
+}
+
+// ── Sidebar UI ────────────────────────────────────────────────
+function renderBBSection() {
+    const section = document.getElementById('bbSection');
+    if (!section) return;
+    section.innerHTML = '';
+
+    // ── Disabled ──
+    if (!blindBox.enabled) {
+        section.innerHTML = `
+            <div style="margin-bottom:0">
+                <div class="sec-lbl" style="margin-bottom:6px">🎲 神秘盲盒</div>
+                <label class="toggle-label">
+                    <input type="checkbox" id="bbToggle">
+                    <span>啟用神秘盲盒</span>
+                </label>
+            </div>`;
+        section.querySelector('#bbToggle').addEventListener('change', e => {
+            blindBox.enabled = e.target.checked;
+            saveBBCache(); renderBBSection(); syncPrizeTabs();
+        });
+        return;
+    }
+
+    // ── Locked (config confirmed) ──
+    if (blindBox.locked) {
+        const types    = getBBPrizeTypes();
+        const poolSize = buildBBWeightedPool().length;
+        section.innerHTML = `
+            <div>
+                <div class="sec-lbl" style="margin-bottom:6px">🎲 神秘盲盒</div>
+                <label class="toggle-label" style="margin-bottom:8px">
+                    <input type="checkbox" id="bbToggle" checked>
+                    <span>啟用神秘盲盒</span>
+                </label>
+                <div class="bb-locked-info">
+                    <span class="bb-lock-icon">🔒 盲盒已鎖定</span>
+                    <div style="font-size:11px;color:var(--text-sub);margin-bottom:4px">獎品種類（共 ${poolSize} 抽）：</div>
+                    ${types.map(t => `<div class="bb-locked-prize">▸ ${esc(t)}</div>`).join('') || '<div style="font-size:12px;color:var(--text-sub)">（獎池為空）</div>'}
+                </div>
+                <button class="bb-unlock-btn" id="bbUnlockBtn">🔓 解鎖重新設定</button>
+            </div>`;
+        section.querySelector('#bbToggle').addEventListener('change', e => {
+            if (!e.target.checked) {
+                blindBox.enabled = false; blindBox.locked = false;
+                // clear selection if ???  was chosen
+                if (selectedPrize === BLIND_BOX_PRIZE_ID) selectedPrize = '';
+                saveBBCache(); renderBBSection(); syncPrizeTabs();
+            }
+        });
+        section.querySelector('#bbUnlockBtn').addEventListener('click', () => {
+            blindBox.locked = false;
+            if (selectedPrize === BLIND_BOX_PRIZE_ID) selectedPrize = '';
+            saveBBCache(); renderBBSection(); syncPrizeTabs();
+        });
+        return;
+    }
+
+    // ── Enabled + Unlocked: show config ──
+    const currentPrizes = Object.keys(prizeInventory);
+    // Remove stale checkedPrizes (prizes that no longer exist)
+    blindBox.checkedPrizes = blindBox.checkedPrizes.filter(n => currentPrizes.includes(n));
+
+    const checkedHTML = currentPrizes.length
+        ? currentPrizes.map(name => `
+            <label class="bb-checked-item">
+                <input type="checkbox" class="bb-prize-check" data-prize="${esc(name)}"
+                    ${blindBox.checkedPrizes.includes(name) ? 'checked' : ''}>
+                <span>${esc(name)}&nbsp;<small style="opacity:.6">×${prizeInventory[name]}</small></span>
+            </label>`).join('')
+        : '<div style="font-size:11px;color:var(--text-sub);padding:4px">尚無正常獎項</div>';
+
+    const exclusiveHTML = blindBox.exclusives.map((ex, i) => `
+        <div class="bb-excl-row" data-idx="${i}">
+            <input type="text"   class="bb-excl-name" placeholder="獨佔獎名" value="${esc(ex.name)}">
+            <input type="number" class="bb-excl-qty"  min="1"   value="${ex.qty || 1}">
+            <button class="btn-del bb-excl-del" type="button" title="移除">✕</button>
+        </div>`).join('');
+
+    section.innerHTML = `
+        <div>
+            <div class="sec-lbl" style="margin-bottom:6px">🎲 神秘盲盒</div>
+            <label class="toggle-label" style="margin-bottom:10px">
+                <input type="checkbox" id="bbToggle" checked>
+                <span>啟用神秘盲盒</span>
+            </label>
+            <div class="bb-config">
+                <div>
+                    <span class="bb-sub-label">A. 勾選納入盲盒池的獎項</span>
+                    <div class="bb-checked-list" id="bbCheckedList">${checkedHTML}</div>
+                </div>
+                <div>
+                    <span class="bb-sub-label">B. 盲盒專屬獎項</span>
+                    <div class="bb-excl-rows" id="bbExclRows">${exclusiveHTML}</div>
+                    <button class="btn-ghost" id="bbAddExclBtn" style="margin-top:5px;font-size:12px">＋ 新增專屬獎</button>
+                </div>
+                <button class="bb-lock-btn" id="bbLockBtn">🔒 確認鎖定盲盒配置</button>
+            </div>
+        </div>`;
+
+    // ── Event listeners ──
+    section.querySelector('#bbToggle').addEventListener('change', e => {
+        if (!e.target.checked) {
+            blindBox.enabled = false; blindBox.locked = false;
+            if (selectedPrize === BLIND_BOX_PRIZE_ID) selectedPrize = '';
+            saveBBCache(); renderBBSection(); syncPrizeTabs();
+        }
+    });
+
+    section.querySelectorAll('.bb-prize-check').forEach(cb => {
+        cb.addEventListener('change', () => {
+            blindBox.checkedPrizes = Array.from(section.querySelectorAll('.bb-prize-check:checked'))
+                .map(c => c.dataset.prize);
+            saveBBCache();
+        });
+    });
+
+    section.querySelector('#bbAddExclBtn').addEventListener('click', () => {
+        collectBBExclusives();
+        blindBox.exclusives.push({ name: '', qty: 1 });
+        saveBBCache(); renderBBSection();
+    });
+
+    section.querySelector('#bbExclRows').addEventListener('click', e => {
+        const del = e.target.closest('.bb-excl-del');
+        if (!del) return;
+        const row = del.closest('.bb-excl-row');
+        collectBBExclusives();
+        blindBox.exclusives.splice(Number(row.dataset.idx), 1);
+        saveBBCache(); renderBBSection();
+    });
+
+    section.querySelector('#bbExclRows').addEventListener('input', e => {
+        if (e.target.matches('.bb-excl-name, .bb-excl-qty')) {
+            collectBBExclusives(); saveBBCache();
+        }
+    });
+
+    section.querySelector('#bbLockBtn').addEventListener('click', confirmBBConfig);
+}
+
+function collectBBExclusives() {
+    const rows = document.querySelectorAll('.bb-excl-row');
+    blindBox.exclusives = [];
+    rows.forEach(row => {
+        const name = row.querySelector('.bb-excl-name').value.trim();
+        const qty  = parseInt(row.querySelector('.bb-excl-qty').value, 10) || 1;
+        if (name) blindBox.exclusives.push({ name, qty });
+    });
+}
+
+function updateBBCheckedList() {
+    // Called by syncPrizeTabs() to keep the checkbox list in sync when prizes change.
+    if (!blindBox.enabled || blindBox.locked) return;
+    const listEl = document.getElementById('bbCheckedList');
+    if (!listEl) return;
+    const currentPrizes = Object.keys(prizeInventory);
+    blindBox.checkedPrizes = blindBox.checkedPrizes.filter(n => currentPrizes.includes(n));
+    listEl.innerHTML = currentPrizes.length
+        ? currentPrizes.map(name => `
+            <label class="bb-checked-item">
+                <input type="checkbox" class="bb-prize-check" data-prize="${esc(name)}"
+                    ${blindBox.checkedPrizes.includes(name) ? 'checked' : ''}>
+                <span>${esc(name)}&nbsp;<small style="opacity:.6">×${prizeInventory[name]}</small></span>
+            </label>`).join('')
+        : '<div style="font-size:11px;color:var(--text-sub);padding:4px">尚無正常獎項</div>';
+
+    listEl.querySelectorAll('.bb-prize-check').forEach(cb => {
+        cb.addEventListener('change', () => {
+            blindBox.checkedPrizes = Array.from(listEl.querySelectorAll('.bb-prize-check:checked'))
+                .map(c => c.dataset.prize);
+            saveBBCache();
+        });
+    });
+}
+
+function confirmBBConfig() {
+    collectBBExclusives();
+    blindBox.checkedPrizes = Array.from(document.querySelectorAll('.bb-prize-check:checked'))
+        .map(c => c.dataset.prize);
+
+    const types = getBBPrizeTypes();
+    if (types.length < 1) { showToast('請至少設定一種盲盒獎品！'); return; }
+    const pool  = buildBBWeightedPool();
+    if (pool.length < 1) { showToast('盲盒獎池為空，請確認獎項數量！'); return; }
+
+    blindBox.locked = true;
+    saveBBCache(); renderBBSection(); syncPrizeTabs();
+    showToast(`🎁 神秘盲盒已鎖定！共 ${types.length} 種、${pool.length} 抽`);
+}
+
+// ── Blind Box Draw Orchestration ──────────────────────────────
+function startBBDraw() {
+    const names = [...new Set(getNames())];
+    const pool  = buildBBWeightedPool();
+    const types = getBBPrizeTypes();
+    if (!names.length)  { showToast('名單是空的！');       return; }
+    if (!pool.length)   { showToast('盲盒獎池已全數抽完！'); return; }
+    if (!types.length)  { showToast('盲盒無可用獎品種類！'); return; }
+
+    // ── Pre-determine winner's prize (the "magic trick" moment) ──
+    const prizeIdx  = Math.floor(Math.random() * pool.length);
+    bbWinnerPrize   = pool[prizeIdx];
+
+    // ── Draw winner from name pool ──
+    const winnerIdx = Math.floor(Math.random() * names.length);
+    bbWinnerName    = names[winnerIdx];
+    bbPhase         = 'drawing';
+
+    setDrawingState(true);
+
+    // Run slot machine (no intercept, no fake decree during blind box)
+    runSlotMachine(names, bbWinnerName, null, () => {
+        revealBBWinnerBrief(bbWinnerName, () => {
+            openBBModal(bbWinnerName, bbWinnerPrize, types, names, winnerIdx);
+        });
+    });
+}
+
+function revealBBWinnerBrief(winner, onDone) {
+    const wd    = document.getElementById('winnerDisplay');
+    const txt   = document.getElementById('winnerNameText');
+    const extra = document.getElementById('winnerPrizeReveal');
+
+    document.getElementById('slotReady').style.display = 'none';
+    document.getElementById('slotStrip').style.display = 'none';
+    wd.querySelectorAll('.sword-slash').forEach(el => el.remove());
+    document.getElementById('particles').innerHTML = '';
+    extra.innerHTML = '';
+    wd.style.display = 'flex';
+
+    txt.style.animation = 'none';
+    txt.classList.remove('decoy');
+    txt.textContent = winner;
+    void txt.offsetHeight;
+    txt.style.animation = '';
+    extra.innerHTML = `<div class="winner-label" style="font-size:15px;letter-spacing:4px">🎁 神秘盲盒 ???</div>`;
+    spawnParticles();
+
+    // Brief pause so audience sees the winner, then modal takes over
+    setTimeout(onDone, quickMode ? 600 : 1800);
+}
+
+// ── Modal ─────────────────────────────────────────────────────
+function openBBModal(winnerName, winnerPrize, types, names, winnerIdx) {
+    bbPhase         = 'awaiting_flip';
+    bbClickedTablet = -1;
+    bbTabletAssign  = [];
+
+    // Build tablet assignments:
+    //   One tablet is the winner's pre-determined prize.
+    //   All other tablets carry the remaining prize types (shuffled).
+    //   No matter which tablet the winner picks, we show their pre-determined prize
+    //   on that tablet and fill the rest normally — the magic trick.
+    const winnerTabletPos = Math.floor(Math.random() * types.length);
+    const otherTypes      = shuffle(types.filter(t => t !== winnerPrize));
+
+    let otherIdx = 0;
+    for (let i = 0; i < types.length; i++) {
+        if (i === winnerTabletPos) {
+            bbTabletAssign.push({ prize: winnerPrize, isPresetWinner: true });
+        } else {
+            const prize = otherTypes[otherIdx] !== undefined ? otherTypes[otherIdx] : winnerPrize;
+            otherIdx++;
+            bbTabletAssign.push({ prize, isPresetWinner: false });
+        }
+    }
+
+    // Set winner name display
+    document.getElementById('bbWinnerNameDisplay').textContent = winnerName;
+
+    // Render tablets
+    const grid = document.getElementById('bbTabletsGrid');
+    grid.innerHTML = '';
+    bbTabletAssign.forEach((_, i) => {
+        const tablet = document.createElement('div');
+        tablet.className = 'bb-tablet';
+        tablet.id = `bb-tablet-${i}`;
+        tablet.innerHTML = `
+            <div class="bb-tablet-inner">
+                <div class="bb-tablet-front">
+                    <div class="bb-tablet-kanji">令</div>
+                    <div class="bb-tablet-ques">???</div>
+                </div>
+                <div class="bb-tablet-back" id="bb-back-${i}">
+                    <!-- filled on flip -->
+                </div>
+            </div>`;
+        tablet.addEventListener('click', () => handleBBTabletClick(i));
+        grid.appendChild(tablet);
+    });
+
+    // Reset action bar
+    document.getElementById('bbActionBar').style.display = 'none';
+    document.getElementById('bbRevealedPrizeName').textContent = '';
+
+    // Show modal + unlock page so host can interact with tablets
+    document.getElementById('bbModal').style.display = 'flex';
+
+    // Keep drawBtn disabled (isDrawing = true) so keyboard shortcuts can't trigger new draw
+    // but unlock the page-level pointer-events lock so modal is clickable
+    unlockPage();
+
+    // Anti-spoiler: defer name removal + history write until finalizeBBDraw()
+    // Store winnerIdx for later use
+    document.getElementById('bbModal').dataset.winnerIdx = winnerIdx;
+}
+
+function handleBBTabletClick(idx) {
+    if (bbPhase !== 'awaiting_flip') return;
+    if (bbClickedTablet !== -1) return; // already flipped one
+
+    bbClickedTablet = idx;
+    bbPhase         = 'flipping';
+
+    // ── Always show winner's pre-determined prize on the chosen tablet ──
+    // (Regardless of which position was internally preset as the winner's.)
+    // Remap assignments so clicked tablet carries winner's prize.
+    const presetPos = bbTabletAssign.findIndex(a => a.isPresetWinner);
+    if (presetPos !== idx) {
+        // Swap prizes: the originally preset winner tablet gets what the clicked tablet had
+        const swapPrize = bbTabletAssign[idx].prize;
+        bbTabletAssign[idx]       = { prize: bbWinnerPrize, isPresetWinner: true };
+        bbTabletAssign[presetPos] = { prize: swapPrize, isPresetWinner: false };
+    }
+
+    // Populate + flip clicked tablet (winner's prize, crimson glow)
+    const backEl = document.getElementById(`bb-back-${idx}`);
+    backEl.classList.add('winner-back');
+    backEl.innerHTML = `
+        <div class="bb-prize-icon">⭐</div>
+        <div class="bb-prize-name">${esc(bbWinnerPrize)}</div>
+        <div class="bb-winner-mark">✦ 中獎 ✦</div>`;
+
+    const tabletEl = document.getElementById(`bb-tablet-${idx}`);
+    tabletEl.classList.add('flipped');
+    spawnBBParticles(tabletEl);
+
+    // Flip remaining tablets one-by-one after a short delay
+    setTimeout(() => revealOtherBBTablets(idx), 1100);
+}
+
+function spawnBBParticles(refEl) {
+    const rect   = refEl.getBoundingClientRect();
+    const cx     = rect.left + rect.width  / 2;
+    const cy     = rect.top  + rect.height / 2;
+    const colors = ['#f0c060','#c9973a','#ffffff','#d42a3a','#ff99aa','#fff7cc'];
+    for (let i = 0; i < 22; i++) {
+        const p     = document.createElement('div');
+        const angle = Math.random() * Math.PI * 2;
+        const dist  = 40 + Math.random() * 90;
+        p.style.cssText = `
+            position:fixed; width:7px; height:7px; border-radius:50%;
+            background:${colors[i % colors.length]};
+            left:${cx}px; top:${cy}px;
+            margin:-3.5px 0 0 -3.5px;
+            --dx:${(Math.cos(angle)*dist).toFixed(1)}px;
+            --dy:${(Math.sin(angle)*dist).toFixed(1)}px;
+            animation:burst .85s ease-out ${(Math.random()*.12).toFixed(2)}s forwards;
+            z-index:9999; pointer-events:none;`;
+        document.body.appendChild(p);
+        p.addEventListener('animationend', () => p.remove(), { once: true });
+    }
+}
+
+function revealOtherBBTablets(clickedIdx) {
+    const tablets = document.querySelectorAll('.bb-tablet');
+    let delay = 0;
+
+    tablets.forEach((tab, i) => {
+        if (i === clickedIdx) return;
+        const assignment = bbTabletAssign[i];
+        const backEl = document.getElementById(`bb-back-${i}`);
+        backEl.classList.remove('winner-back');
+        backEl.innerHTML = `
+            <div class="bb-prize-icon">🎁</div>
+            <div class="bb-prize-name">${esc(assignment.prize)}</div>`;
+        setTimeout(() => tab.classList.add('flipped'), delay);
+        delay += 220;
+    });
+
+    // Show confirm button after all tablets have flipped
+    setTimeout(() => {
+        bbPhase = 'revealed';
+        document.getElementById('bbRevealedPrizeName').textContent = bbWinnerPrize;
+        document.getElementById('bbActionBar').style.display = 'flex';
+    }, delay + 500);
+}
+
+// ── Finalize (anti-spoiler: runs ONLY after host confirms) ────
+function finalizeBBDraw() {
+    if (bbPhase !== 'revealed') return;
+
+    saveSnapshot();
+
+    const winnerIdx = parseInt(document.getElementById('bbModal').dataset.winnerIdx || '-1', 10);
+
+    // 1. Remove winner from names pool (anti-spoiler: deferred until now)
+    if (autoRemove && winnerIdx !== -1) {
+        const ta    = document.getElementById('namesInput');
+        const names = getNames();
+        if (winnerIdx < names.length) names.splice(winnerIdx, 1);
+        ta.value = names.join('\n');
+        updateNameCount(ta.value);
+    }
+
+    // 2. Decrement inventory (anti-spoiler: deferred until now)
+    const isNormalPrize = blindBox.checkedPrizes.includes(bbWinnerPrize);
+    const exEntry       = blindBox.exclusives.find(e => e.name === bbWinnerPrize);
+
+    if (isNormalPrize && Object.hasOwn(prizeInventory, bbWinnerPrize)) {
+        prizeInventory[bbWinnerPrize] = Math.max(0, prizeInventory[bbWinnerPrize] - 1);
+        syncPrizeRowQty(bbWinnerPrize);
+    } else if (exEntry) {
+        exEntry.qty = Math.max(0, exEntry.qty - 1);
+        saveBBCache();
+    }
+
+    // 3. Write to history (anti-spoiler: deferred until now)
+    historyData.unshift({
+        prize:    bbWinnerPrize,
+        realPrize: bbWinnerPrize,
+        winner:   bbWinnerName,
+        blindBox: true,
+        ts:       Date.now(),
+    });
+    renderHistory();
+
+    // 4. Sync tabs + persist
+    syncPrizeTabs();
+    clearTimeout(saveCacheTimer);
+    saveCache();
+    checkAllDone();
+
+    // 5. Close modal and reset
+    closeBBModal();
+}
+
+function closeBBModal() {
+    document.getElementById('bbModal').style.display = 'none';
+    bbPhase         = 'idle';
+    bbWinnerName    = null;
+    bbWinnerPrize   = null;
+    bbTabletAssign  = [];
+    bbClickedTablet = -1;
+    setDrawingState(false);
+    resetStageTimer = setTimeout(resetStage, 3000);
+}
+
 })();
 </script>
 <div class="toast" id="toast" role="status" aria-live="polite" aria-atomic="true"></div>
 <div id="pageLock"></div>
+
+<!-- ═══════════════ Blind Box Modal ═══════════════ -->
+<div id="bbModal" class="bb-modal" style="display:none" role="dialog" aria-modal="true" aria-label="神秘盲盒開獎">
+    <div class="bb-modal-inner">
+        <div class="bb-top-line"></div>
+        <div class="bb-announce">
+            <div class="bb-announce-label">🎁 神秘盲盒開獎</div>
+            <div class="bb-announce-winner" id="bbWinnerNameDisplay"></div>
+            <div class="bb-announce-sub">請選擇一塊令牌，以揭曉命運之獎</div>
+        </div>
+        <div class="bb-tablets-grid" id="bbTabletsGrid"></div>
+        <div class="bb-action-bar" id="bbActionBar" style="display:none">
+            <div class="bb-result-line">✨ 恭喜獲得：<strong id="bbRevealedPrizeName"></strong></div>
+            <button class="bb-confirm-draw-btn" id="bbConfirmDrawBtn">確認中獎，記錄入冊</button>
+            <div class="bb-hint-line">點擊按鈕後，中獎記錄將正式寫入右側名單</div>
+        </div>
+    </div>
+</div>
 
 </body>
 </html>
