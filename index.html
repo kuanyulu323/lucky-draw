@@ -1555,7 +1555,8 @@ function startDraw() {
     runBatchDraw(batchCount);
 }
 
-function runBatchDraw(remaining) {
+// allowSpecial=false on re-draws triggered by fake decree to prevent infinite loop
+function runBatchDraw(remaining, allowSpecial = true) {
     if (remaining === 0) {
         setDrawingState(false);
         showToast('已完成抽選');
@@ -1580,16 +1581,16 @@ function runBatchDraw(remaining) {
     const winnerIdx = Math.floor(Math.random() * names.length);
     const winner = names[winnerIdx];
     // Special effects: mutually exclusive. fakeDecree = 100% for testing.
-    const fakeDecree = Math.random() < 1.0;
-    const intercept  = !fakeDecree && names.length >= 2 && Math.random() < 0.2;
+    // allowSpecial is false after a fake-decree re-draw to prevent infinite loop.
+    const fakeDecree = allowSpecial && Math.random() < 1.0;
+    const intercept  = !fakeDecree && allowSpecial && names.length >= 2 && Math.random() < 0.2;
     const decoyIdx = intercept ? (winnerIdx === 0 ? 1 : 0) : -1;
     const decoy = intercept ? names[decoyIdx] : null;
 
     runSlotMachine(names, winner, decoy, () => {
         if (fakeDecree) {
-            // Show winner fully (no finalizeWinner), then stamp and re-draw
             showDecreeThenRedraw(winner, () => {
-                runBatchDraw(remaining); // re-draw same count; nothing was awarded
+                runBatchDraw(remaining, false); // disable special effects for this re-draw
             });
         } else {
             finalizeWinner(names, winnerIdx, winner, decoy, () => {
