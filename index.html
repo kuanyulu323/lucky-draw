@@ -1589,7 +1589,7 @@ function runBatchDraw(remaining, allowSpecial = true) {
 
     runSlotMachine(names, winner, decoy, () => {
         if (fakeDecree) {
-            showDecreeThenRedraw(winner, () => {
+            showDecreeThenRedraw(winner, winnerIdx, () => {
                 runBatchDraw(remaining, false); // disable special effects for this re-draw
             });
         } else {
@@ -1709,10 +1709,11 @@ function runSlotMachine(names, winner, decoy, onComplete) {
     requestAnimationFrame(step);
 }
 
-function showDecreeThenRedraw(winner, onRedraw) {
+function showDecreeThenRedraw(winner, winnerIdx, onRedraw) {
     // Display winner fully — as if they actually won
     const wd  = document.getElementById('winnerDisplay');
     const txt = document.getElementById('winnerNameText');
+    const ta  = document.getElementById('namesInput');
 
     document.getElementById('slotReady').style.display = 'none';
     document.getElementById('slotStrip').style.display = 'none';
@@ -1728,6 +1729,29 @@ function showDecreeThenRedraw(winner, onRedraw) {
     txt.style.animation = '';
     spawnParticles();
 
+    // ── Pretend it was a real win: remove name + decrement prize ──
+    const allNames = getNames();
+    let removedName = null;
+    if (autoRemove) {
+        allNames.splice(winnerIdx, 1);
+        removedName = winner;
+        ta.value = allNames.join('\n');
+        updateNameCount(ta.value);
+    }
+
+    // Decrement prize display (non-blind only; blind prize not yet resolved)
+    let decrementedPrize = null;
+    if (selectedPrize && selectedPrize !== BLIND_KEY && prizeInventory[selectedPrize] > 0) {
+        decrementedPrize = selectedPrize;
+        prizeInventory[decrementedPrize]--;
+        document.querySelectorAll('.prize-row').forEach(row => {
+            if (row.querySelector('.pr-name').value.trim() === decrementedPrize) {
+                row.querySelector('.pr-qty').value = prizeInventory[decrementedPrize];
+            }
+        });
+        syncPrizeTabs();
+    }
+
     // 3~5 second pause — let chat celebrate
     const pause = 3000 + Math.random() * 2000;
     setTimeout(() => {
@@ -1740,11 +1764,31 @@ function showDecreeThenRedraw(winner, onRedraw) {
         `;
         wd.appendChild(stamp);
 
-        // After stamp settles, fade it out then reset and re-draw
+        // After stamp settles: restore name + prize, then reset and re-draw
         setTimeout(() => {
             stamp.classList.add('fading');
             setTimeout(() => {
                 stamp.remove();
+
+                // Restore name
+                if (removedName !== null) {
+                    const current = getNames();
+                    current.push(removedName);
+                    ta.value = current.join('\n');
+                    updateNameCount(ta.value);
+                }
+
+                // Restore prize count
+                if (decrementedPrize !== null) {
+                    prizeInventory[decrementedPrize]++;
+                    document.querySelectorAll('.prize-row').forEach(row => {
+                        if (row.querySelector('.pr-name').value.trim() === decrementedPrize) {
+                            row.querySelector('.pr-qty').value = prizeInventory[decrementedPrize];
+                        }
+                    });
+                    syncPrizeTabs();
+                }
+
                 resetStage();
                 if (typeof onRedraw === 'function') onRedraw();
             }, 500);
