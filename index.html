@@ -145,47 +145,39 @@
             gap: 18px;
             overflow-y: auto;
         }
-        /* ── 老虎機舞台（旗 + 機 橫排） ── */
+        /* ── 左右戰旗：固定懸掛於畫面左右側 ── */
         @keyframes flagSway {
-            0%   { transform: rotate(-1deg); }
-            45%  { transform: rotate( 0.7deg) translateY(-2px); }
-            100% { transform: rotate(-1deg); }
+            0%   { transform: rotate(-1.2deg) translateY(0px); }
+            40%  { transform: rotate( 0.6deg) translateY(-3px); }
+            70%  { transform: rotate(-0.8deg) translateY(1px); }
+            100% { transform: rotate(-1.2deg) translateY(0px); }
         }
         @keyframes flagSwayR {
-            0%   { transform: scaleX(-1) rotate(-1deg); }
-            45%  { transform: scaleX(-1) rotate( 0.7deg) translateY(-2px); }
-            100% { transform: scaleX(-1) rotate(-1deg); }
+            0%   { transform: scaleX(-1) rotate(-1.2deg) translateY(0px); }
+            40%  { transform: scaleX(-1) rotate( 0.6deg) translateY(-3px); }
+            70%  { transform: scaleX(-1) rotate(-0.8deg) translateY(1px); }
+            100% { transform: scaleX(-1) rotate(-1.2deg) translateY(0px); }
         }
-        .slot-stage {
-            display: flex;
-            align-items: flex-start;
-            gap: 0;
-        }
-        /* 羊皮紙旗座：提供 multiply 所需的淺色底 */
-        .flag-holder {
-            width: 128px;
-            flex-shrink: 0;
-            align-self: flex-start;
-            background: linear-gradient(180deg,
-                #c8a86a 0%, #e0c98a 30%, #d4b878 70%, #b8965a 100%);
-            border-radius: 4px 0 0 4px;
-            overflow: hidden;
-            box-shadow: inset 0 0 18px rgba(80,40,0,.35), 2px 0 12px rgba(0,0,0,.5);
-        }
-        .flag-holder-r {
-            border-radius: 0 4px 4px 0;
-            box-shadow: inset 0 0 18px rgba(80,40,0,.35), -2px 0 12px rgba(0,0,0,.5);
-        }
-        .flag-img {
-            width: 100%;
-            display: block;
-            mix-blend-mode: multiply;
+        .banner {
+            position: fixed;
+            top: 48px;        /* 從 header 底部開始 */
+            width: 180px;
+            height: auto;
+            pointer-events: none;
+            z-index: 50;
             transform-origin: top center;
+            filter:
+                drop-shadow(-6px 12px 20px rgba(0,0,0,.7))
+                drop-shadow( 0px  4px 12px rgba(155,26,42,.5));
         }
-        .flag-img-l { animation: flagSway  5.8s ease-in-out infinite; }
-        .flag-img-r {
+        .banner-l {
+            left: 12px;
+            animation: flagSway 5.5s ease-in-out infinite;
+        }
+        .banner-r {
+            right: 12px;
             transform: scaleX(-1);
-            animation: flagSwayR 6.5s ease-in-out infinite;
+            animation: flagSwayR 6.2s ease-in-out infinite;
         }
         .p-history {
             width: 262px;
@@ -715,13 +707,7 @@
 
         <div class="prize-selector" id="prizeTabs"></div>
 
-        <div class="slot-stage">
-            <!-- 左旗 -->
-            <div class="flag-holder flag-holder-l">
-                <img src="S__41713667.jpg" class="flag-img flag-img-l" alt="">
-            </div>
-
-            <div class="slot-wrap">
+        <div class="slot-wrap">
             <!-- 三國角落扣飾 -->
             <span class="sc sc-tl"></span>
             <span class="sc sc-tr"></span>
@@ -743,12 +729,6 @@
             </div>
             </div>
         </div>
-
-            <!-- 右旗（鏡射） -->
-            <div class="flag-holder flag-holder-r">
-                <img src="S__41713667.jpg" class="flag-img flag-img-r" alt="">
-            </div>
-        </div><!-- end slot-stage -->
 
         <div class="draw-info">
             <span>名單剩餘：<b id="poolCount">0</b> 人</span>
@@ -1144,6 +1124,9 @@ function esc(str) {
 }
 </script>
 
+<!-- 左右戰旗：position:fixed，懸掛於畫面兩側，善用去背透明效果 -->
+<img src="flag.png" class="banner banner-l" alt="">
+<img src="flag.png" class="banner banner-r" alt="">
 
 </body>
 </html>
