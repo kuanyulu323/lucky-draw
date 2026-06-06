@@ -3,612 +3,928 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🌺 彼岸花抽獎系統</title>
+    <title>⚔️ 謀定天下 · 抽獎系統</title>
     <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
         :root {
-            --primary: #ff2a44;
-            --primary-glow: rgba(255, 42, 68, 0.4);
-            --bg-gradient: radial-gradient(circle at 50% 10%, #1a0f12 0%, #08090c 80%);
-            --card-bg: rgba(20, 24, 33, 0.85);
-            --border: #282f3d;
-            --text-main: #f5f7fa;
-            --text-muted: #74839b;
+            --bg:          #07080d;
+            --bg-panel:    #0c0e15;
+            --bg-inset:    #0f1118;
+            --bg-el:       #141724;
+            --gold:        #c9973a;
+            --gold-light:  #f0c060;
+            --gold-glow:   rgba(201,151,58,.35);
+            --crimson:     #9b1a2a;
+            --crimson-lit: #d42a3a;
+            --crimson-glow:rgba(212,42,58,.35);
+            --text:        #e0d6c4;
+            --text-sub:    #7a8290;
+            --border:      #1c2130;
+            --border-hi:   #272f42;
         }
+
+        html, body { height: 100%; overflow: hidden; }
 
         body {
-            font-family: 'PingFang TC', 'SF Pro Display', 'Microsoft JhengHei', sans-serif;
-            background: var(--bg-gradient);
-            color: var(--text-main);
-            margin: 0;
-            padding: 40px 20px;
+            font-family: 'PingFang TC','Noto Sans TC','Microsoft JhengHei',sans-serif;
+            background: var(--bg);
+            color: var(--text);
             display: flex;
-            justify-content: center;
-            align-items: flex-start;
-            min-height: 100vh;
-            box-sizing: border-box;
+            flex-direction: column;
         }
 
-        .main-layout {
+        /* ─── Header ─── */
+        header {
+            flex-shrink: 0;
+            background: var(--bg-panel);
+            border-bottom: 1px solid var(--border);
+            padding: 13px 28px;
             display: flex;
-            width: 100%;
-            max-width: 1260px;
-            gap: 30px;
-            align-items: stretch;
-        }
-
-        .card {
-            background: var(--card-bg);
-            padding: 35px;
-            border-radius: 20px;
-            box-shadow: 0 15px 45px rgba(0, 0, 0, 0.6);
-            border: 1px solid rgba(255, 255, 255, 0.05);
-            backdrop-filter: blur(20px);
-            box-sizing: border-box;
-            position: relative;
-        }
-        
-        .card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 4px;
-            background: linear-gradient(90deg, var(--primary), #ff6699, var(--primary));
-            background-size: 200% auto;
-            animation: flowingGlow 4s linear infinite;
-        }
-
-        @keyframes flowingGlow {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
-        }
-
-        .left-panel { flex: 1.6; }
-        .right-panel { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
-
-        h2 {
-            color: #ffffff;
-            margin-top: 0;
-            text-align: center;
-            font-size: 28px;
-            letter-spacing: 4px;
-            font-weight: 800;
-            text-shadow: 0 0 20px var(--primary-glow);
-        }
-        h2 span { color: var(--primary); }
-
-        h3 {
-            color: #ffffff;
-            margin-top: 0;
-            font-size: 22px;
-            letter-spacing: 2px;
-            border-bottom: 2px solid var(--border);
-            padding-bottom: 15px;
-            display: flex;
-            justify-content: space-between;
             align-items: center;
-            margin-bottom: 10px;
+            justify-content: space-between;
+        }
+        .hdr-title {
+            font-size: 19px;
+            font-weight: 900;
+            color: var(--gold-light);
+            letter-spacing: 5px;
+            text-shadow: 0 0 18px var(--gold-glow);
+        }
+        .hdr-sub { font-size: 11px; color: var(--text-sub); letter-spacing: 3px; margin-top: 3px; }
+        .hdr-live {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(212,42,58,.1);
+            border: 1px solid rgba(212,42,58,.3);
+            color: var(--crimson-lit);
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 2px;
+        }
+        .live-dot {
+            width: 7px; height: 7px;
+            background: var(--crimson-lit);
+            border-radius: 50%;
+            animation: blink 1.2s ease-in-out infinite;
+        }
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50%       { opacity: .15; }
         }
 
-        .form-group {
-            margin-bottom: 22px;
-            text-align: left;
+        /* ─── Layout ─── */
+        .app { flex: 1; display: flex; overflow: hidden; }
+        .panel { display: flex; flex-direction: column; overflow: hidden; }
+
+        .p-settings {
+            width: 272px;
+            flex-shrink: 0;
+            background: var(--bg-panel);
+            border-right: 1px solid var(--border);
+            overflow-y: auto;
+            padding: 22px 18px;
+            gap: 24px;
+        }
+        .p-draw {
+            flex: 1;
+            background: var(--bg);
+            align-items: center;
+            justify-content: center;
+            padding: 24px 36px;
+            gap: 18px;
+            overflow-y: auto;
+        }
+        .p-history {
+            width: 262px;
+            flex-shrink: 0;
+            background: var(--bg-panel);
+            border-left: 1px solid var(--border);
+            padding: 22px 18px;
         }
 
-        label {
-            font-weight: 600;
-            display: block;
-            margin-bottom: 10px;
-            color: #e2e8f0;
-            font-size: 15px;
+        /* ─── Section Label ─── */
+        .sec-lbl {
+            font-size: 10px;
+            font-weight: 700;
+            color: var(--text-sub);
+            letter-spacing: 2.5px;
+            text-transform: uppercase;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 11px;
+            flex-shrink: 0;
         }
+        .sec-lbl::after { content:''; flex:1; height:1px; background:var(--border); }
 
-        textarea, input {
-            width: 100%;
-            background: #0f121a;
-            color: #ffffff;
+        /* ─── Inputs ─── */
+        textarea, input[type=text], input[type=number] {
+            background: var(--bg-inset);
+            color: var(--text);
             border: 1px solid var(--border);
-            border-radius: 10px;
-            padding: 14px;
-            box-sizing: border-box;
-            font-size: 15px;
-            transition: all 0.25s ease;
+            border-radius: 8px;
+            padding: 9px 11px;
+            font-size: 13px;
+            font-family: inherit;
+            width: 100%;
+            transition: border-color .2s, box-shadow .2s;
         }
         textarea:focus, input:focus {
             outline: none;
-            border-color: var(--primary);
-            box-shadow: 0 0 12px var(--primary-glow);
-            background: #131722;
+            border-color: var(--gold);
+            box-shadow: 0 0 0 3px var(--gold-glow);
         }
-        textarea { height: 120px; resize: vertical; }
+        textarea { height: 185px; resize: vertical; line-height: 1.75; }
 
-        .prize-input-row {
-            display: flex;
-            gap: 12px;
-            margin-bottom: 12px;
-            align-items: center;
-        }
+        .name-count { margin-top: 7px; font-size: 12px; color: var(--text-sub); }
+        .name-count b { color: var(--gold-light); font-size: 15px; }
 
-        .btn-add {
-            background: #1c2230;
-            color: #ffffff;
-            border: 1px solid var(--border);
-            padding: 10px 20px;
-            border-radius: 8px;
+        /* ─── Prize Rows ─── */
+        #prizeRows { display: flex; flex-direction: column; gap: 7px; margin-bottom: 8px; }
+        .prize-row { display: flex; gap: 6px; align-items: center; }
+        .prize-row input[type=text]   { flex: 3; }
+        .prize-row input[type=number] { flex: 1; min-width: 52px; }
+        .btn-del {
+            background: none;
+            border: 1px solid transparent;
+            color: var(--text-sub);
             cursor: pointer;
-            font-size: 14px;
-            font-weight: 600;
+            font-size: 13px;
+            padding: 6px 8px;
+            border-radius: 6px;
+            transition: all .2s;
+            line-height: 1;
+            flex-shrink: 0;
         }
-        .btn-add:hover { background: #262e42; border-color: #3f4e6e; }
-        .btn-del { background: none; border: none; color: #ff4d66; cursor: pointer; font-size: 20px; padding: 5px; }
+        .btn-del:hover { color: var(--crimson-lit); border-color: rgba(212,42,58,.4); }
 
-        .prize-cards-container {
+        .btn-ghost {
+            background: transparent;
+            color: var(--text-sub);
+            border: 1px dashed var(--border-hi);
+            border-radius: 8px;
+            padding: 9px 12px;
+            font-size: 13px;
+            font-family: inherit;
+            cursor: pointer;
+            width: 100%;
+            transition: all .2s;
+        }
+        .btn-ghost:hover { border-color: var(--gold); color: var(--gold); }
+
+        .btn-danger {
+            margin-top: auto;
+            background: transparent;
+            color: var(--text-sub);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 8px 12px;
+            font-size: 12px;
+            font-family: inherit;
+            cursor: pointer;
+            width: 100%;
+            transition: all .2s;
+            flex-shrink: 0;
+        }
+        .btn-danger:hover { color: var(--crimson-lit); border-color: rgba(212,42,58,.4); }
+
+        /* ─── Prize Selector ─── */
+        .prize-selector {
             display: flex;
             flex-wrap: wrap;
-            gap: 14px;
-            margin-top: 12px;
+            gap: 10px;
+            justify-content: center;
+            width: 100%;
+            max-width: 680px;
         }
-
-        .prize-badge-card {
-            background: #0f121a;
-            border: 2px solid var(--border);
+        .prize-tab {
+            background: var(--bg-el);
+            border: 2px solid var(--border-hi);
             border-radius: 12px;
-            padding: 14px 22px;
+            padding: 13px 20px;
             cursor: pointer;
             display: flex;
             flex-direction: column;
             align-items: center;
-            min-width: 110px;
-            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            gap: 5px;
+            min-width: 108px;
+            transition: all .22s cubic-bezier(.4,0,.2,1);
+            user-select: none;
         }
-        .prize-badge-card .p-name { font-size: 16px; font-weight: 700; color: #cbd5e1; margin-bottom: 5px; }
-        .prize-badge-card .p-qty { font-size: 13px; color: var(--text-muted); }
-
-        .prize-badge-card.active {
-            border-color: var(--primary);
-            background: rgba(255, 42, 68, 0.06);
-            box-shadow: 0 0 20px var(--primary-glow);
+        .prize-tab:hover:not(.soldout) {
+            border-color: var(--gold);
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px var(--gold-glow);
+        }
+        .prize-tab.active {
+            border-color: var(--gold);
+            background: rgba(201,151,58,.08);
+            box-shadow: 0 0 0 1px var(--gold), 0 6px 24px var(--gold-glow);
             transform: translateY(-3px);
         }
-        .prize-badge-card.active .p-name { color: #ffffff; }
-        .prize-badge-card.active .p-qty { color: #ff8899; font-weight: bold; }
+        .prize-tab.soldout { opacity: .2; cursor: not-allowed; pointer-events: none; }
+        .t-name { font-size: 14px; font-weight: 700; color: var(--text); }
+        .prize-tab.active .t-name { color: var(--gold-light); }
+        .t-qty  { font-size: 11px; color: var(--text-sub); }
+        .prize-tab.active .t-qty { color: var(--gold); font-weight: 600; }
 
-        .prize-badge-card.soldout { opacity: 0.15; cursor: not-allowed; pointer-events: none; }
-
-        .draw-btn {
-            background: linear-gradient(135deg, var(--primary) 0%, #b31225 100%);
-            color: white;
-            padding: 18px;
-            border: none;
+        .no-prize-hint {
+            font-size: 13px;
+            color: var(--text-sub);
+            padding: 16px;
+            border: 1px dashed var(--border-hi);
             border-radius: 10px;
-            cursor: pointer;
-            font-size: 22px;
-            font-weight: 800;
+            text-align: center;
             width: 100%;
-            margin-top: 20px;
-            transition: all 0.3s ease;
-            box-shadow: 0 6px 25px rgba(255, 42, 68, 0.3);
-            letter-spacing: 6px;
+            max-width: 680px;
         }
-        .draw-btn:hover { transform: translateY(-2px); box-shadow: 0 10px 30px rgba(255, 42, 68, 0.45); }
-        .draw-btn:disabled { background: #202633; color: var(--text-muted); box-shadow: none; cursor: not-allowed; transform: none; }
 
-        .stage-container {
-            margin: 30px 0 10px 0;
-            padding: 30px;
-            background: #090a0d;
-            border-radius: 14px;
-            min-height: 90px;
+        /* ─── Slot Machine ─── */
+        .slot-wrap {
+            width: 100%;
+            max-width: 680px;
+            background: var(--bg-inset);
+            border: 2px solid var(--border-hi);
+            border-radius: 18px;
+            overflow: hidden;
+            position: relative;
+            /* subtle gold top accent */
+            box-shadow: 0 0 0 1px rgba(201,151,58,.06), inset 0 0 40px rgba(0,0,0,.5);
+        }
+        /* animated gold top line */
+        .slot-wrap::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, transparent, var(--gold), var(--gold-light), var(--gold), transparent);
+            background-size: 200% auto;
+            animation: shimmer 3s linear infinite;
+            z-index: 20;
+        }
+        @keyframes shimmer {
+            0%   { background-position: -200% center; }
+            100% { background-position:  200% center; }
+        }
+
+        .slot-machine {
+            height: 360px;
+            overflow: hidden;
+            position: relative;
+        }
+        /* gradient fade masks */
+        .slot-machine::before, .slot-machine::after {
+            content: '';
+            position: absolute;
+            left: 0; right: 0;
+            height: 120px;
+            z-index: 2;
+            pointer-events: none;
+        }
+        .slot-machine::before {
+            top: 0;
+            background: linear-gradient(to bottom, var(--bg-inset) 10%, transparent);
+        }
+        .slot-machine::after {
+            bottom: 0;
+            background: linear-gradient(to top, var(--bg-inset) 10%, transparent);
+        }
+        /* center highlight bar */
+        .slot-center-bar {
+            position: absolute;
+            top: 50%; left: 0; right: 0;
+            height: 72px;
+            transform: translateY(-50%);
+            border-top: 1px solid rgba(201,151,58,.3);
+            border-bottom: 1px solid rgba(201,151,58,.3);
+            background: rgba(201,151,58,.04);
+            z-index: 1;
+            pointer-events: none;
+        }
+        .slot-center-bar::before, .slot-center-bar::after {
+            content: '';
+            position: absolute;
+            top: 50%; transform: translateY(-50%);
+            width: 3px; height: 28px;
+            background: var(--gold);
+            border-radius: 2px;
+            opacity: .7;
+        }
+        .slot-center-bar::before { left: 22px; }
+        .slot-center-bar::after  { right: 22px; }
+
+        /* slot states */
+        .slot-state {
+            position: absolute;
+            inset: 0;
             display: flex;
-            justify-content: center;
             align-items: center;
-            border: 2px solid #282f3d;
-            box-shadow: inset 0 0 30px rgba(0,0,0,0.9);
+            justify-content: center;
         }
-
-        #resultText {
-            font-size: 42px;
+        #slotReady {
+            font-size: 38px;
             font-weight: 900;
-            color: #ffffff;
+            color: var(--border-hi);
+            letter-spacing: 10px;
+        }
+        #slotStrip {
+            position: absolute;
+            left: 0; right: 0; top: 0;
+            z-index: 1;
+            will-change: transform;
+            display: none;
+        }
+        .slot-item {
+            height: 72px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 26px;
+            font-weight: 700;
+            color: var(--text-sub);
             letter-spacing: 2px;
-            text-shadow: 0 0 15px rgba(255,255,255,0.6);
+            padding: 0 60px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        #winnerDisplay {
+            flex-direction: column;
+            gap: 10px;
+            background: var(--bg-inset);
+            z-index: 10;
+            display: none;
+        }
+        .winner-label {
+            font-size: 13px;
+            color: var(--gold);
+            letter-spacing: 5px;
+            font-weight: 700;
+        }
+        .winner-name-text {
+            font-size: 54px;
+            font-weight: 900;
+            color: #fff;
+            letter-spacing: 4px;
+            text-shadow: 0 0 30px var(--gold-light), 0 0 80px var(--gold-glow);
+            animation: winPop .55s cubic-bezier(.175,.885,.32,1.275) both,
+                       winGlow 2s ease-in-out .6s infinite;
+        }
+        /* particle container */
+        #winnerDisplay .particles {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            overflow: hidden;
+        }
+        .particle {
+            position: absolute;
+            width: 7px; height: 7px;
+            border-radius: 50%;
+            animation: burst .9s ease-out forwards;
+        }
+        @keyframes burst {
+            0%   { transform: translate(0,0) scale(1); opacity: 1; }
+            100% { transform: translate(var(--dx),var(--dy)) scale(0); opacity: 0; }
+        }
+        @keyframes winPop {
+            0%   { transform: scale(0.35); opacity: 0; }
+            65%  { transform: scale(1.1); }
+            100% { transform: scale(1);   opacity: 1; }
+        }
+        @keyframes winGlow {
+            0%, 100% { text-shadow: 0 0 28px var(--gold-light), 0 0 70px var(--gold-glow); }
+            50%       { text-shadow: 0 0 50px #fff, 0 0 90px var(--gold-light), 0 0 130px var(--gold-glow); }
         }
 
-        .rolling { color: var(--primary) !important; text-shadow: 0 0 25px var(--primary) !important; }
-        .roll-done { animation: stagePop 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
-
-        @keyframes stagePop {
-            0% { transform: scale(0.7); filter: brightness(2); }
-            100% { transform: scale(1); color: #ffffff; text-shadow: 0 0 25px var(--primary), 0 0 10px rgba(255,255,255,0.5); }
+        /* ─── Info Bar ─── */
+        .draw-info {
+            display: flex;
+            gap: 32px;
+            font-size: 13px;
+            color: var(--text-sub);
         }
+        .draw-info b { color: var(--gold-light); font-size: 15px; }
 
-        .info-text { font-size: 13px; color: var(--text-muted); margin-top: 6px; }
+        /* ─── Draw Button ─── */
+        .draw-btn {
+            background: linear-gradient(135deg, var(--crimson-lit) 0%, var(--crimson) 100%);
+            color: #fff;
+            border: none;
+            padding: 16px 72px;
+            border-radius: 12px;
+            font-size: 20px;
+            font-weight: 900;
+            letter-spacing: 9px;
+            cursor: pointer;
+            box-shadow: 0 4px 28px var(--crimson-glow);
+            transition: all .3s;
+            position: relative;
+            overflow: hidden;
+            font-family: inherit;
+        }
+        .draw-btn::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,.12), transparent);
+            transform: translateX(-100%);
+            transition: transform .6s;
+        }
+        .draw-btn:hover::after { transform: translateX(100%); }
+        .draw-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 36px var(--crimson-glow); }
+        .draw-btn:disabled {
+            background: var(--bg-el);
+            color: var(--text-sub);
+            box-shadow: none;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .draw-btn:disabled::after { display: none; }
 
+        /* ─── History ─── */
+        .history-header {
+            font-size: 14px;
+            font-weight: 800;
+            color: var(--gold-light);
+            letter-spacing: 3px;
+            padding-bottom: 14px;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 4px;
+            flex-shrink: 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .history-count {
+            background: rgba(201,151,58,.12);
+            border: 1px solid rgba(201,151,58,.25);
+            color: var(--gold);
+            font-size: 11px;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-weight: 700;
+            letter-spacing: 0;
+        }
         .history-list {
-            padding-left: 0;
             list-style: none;
-            margin: 0;
-            flex-grow: 1;
             overflow-y: auto;
-            padding-right: 5px;
+            flex: 1;
         }
-        
-        .history-list::-webkit-scrollbar { width: 6px; }
-        .history-list::-webkit-scrollbar-track { background: transparent; }
-        .history-list::-webkit-scrollbar-thumb { background: #262e3d; border-radius: 10px; }
-        .history-list::-webkit-scrollbar-thumb:hover { background: var(--primary); }
+        .history-list::-webkit-scrollbar { width: 4px; }
+        .history-list::-webkit-scrollbar-thumb { background: var(--border-hi); border-radius: 4px; }
 
-        .history-list li {
-            padding: 14px;
-            border-bottom: 1px solid #1c2230;
+        .history-item {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            animation: fadeInRow 0.35s ease-out;
+            padding: 11px 2px;
+            border-bottom: 1px solid var(--border);
+            gap: 8px;
+            animation: slideIn .3s ease;
         }
-        @keyframes fadeInRow {
-            from { opacity: 0; transform: translateX(20px); }
-            to { opacity: 1; transform: translateX(0); }
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(10px); }
+            to   { opacity: 1; transform: translateX(0); }
         }
-        .history-list li span.prize-tag {
-            background: linear-gradient(90deg, rgba(255,42,68,0.15), rgba(255,42,68,0.02));
-            color: #ff556b;
-            border: 1px solid rgba(255,42,68,0.3);
-            padding: 5px 12px;
-            border-radius: 6px;
-            font-size: 13px;
+        .hi-prize {
+            font-size: 10px;
             font-weight: 700;
+            color: var(--gold);
+            background: rgba(201,151,58,.1);
+            border: 1px solid rgba(201,151,58,.25);
+            padding: 3px 7px;
+            border-radius: 4px;
+            white-space: nowrap;
+            flex-shrink: 0;
+            letter-spacing: 1px;
         }
-        .history-list li span.winner-name { font-weight: 700; color: #ffffff; font-size: 17px; }
-        
-        .btn-clear-cache { background: none; border: 1px solid #333947; color: var(--text-muted); font-size: 12px; padding: 4px 8px; border-radius: 4px; cursor: pointer; }
-        .btn-clear-cache:hover { background: #1c2230; color: #ff4d66; }
+        .hi-winner {
+            font-size: 15px;
+            font-weight: 700;
+            color: var(--text);
+            text-align: right;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        /* ─── Global scrollbar ─── */
+        ::-webkit-scrollbar { width: 5px; height: 5px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: var(--border-hi); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--gold); }
     </style>
 </head>
 <body>
 
-<div class="main-layout">
-    
-    <div class="card left-panel">
-        <h2>🌺 <span>彼岸花</span> 抽獎系統</h2>
-        
-        <div class="form-group">
-            <label>👥 抽獎名單列表（一人一行）：</label>
-            <textarea id="namesInput" placeholder="請在此輸入名單..." oninput="handleNameInputDebounce()"></textarea>
-            <div class="info-text" id="poolCount">目前名單人數：0 人</div>
-        </div>
-
-        <div class="form-group">
-            <label>🎁 獎項與數量設定：</label>
-            <div id="prizeSetupContainer"></div>
-            <button class="btn-add" onclick="addPrizeRow('', 1)">＋ 增加新獎項</button>
-        </div>
-
-        <div class="form-group">
-            <label>🎯 當前欲抽取獎項（請點擊下方字卡選擇）：</label>
-            <div class="prize-cards-container" id="prizeCardsBoard"></div>
-        </div>
-
-        <button id="drawBtn" class="draw-btn" onclick="startPerfectDraw()">✨ 開始抽獎 ✨</button>
-        
-        <div class="stage-container">
-            <div id="resultText">READY</div>
-        </div>
+<header>
+    <div>
+        <div class="hdr-title">⚔️ 謀定天下 · 盟友抽獎</div>
+        <div class="hdr-sub">三國：謀定天下 · 內部抽獎系統</div>
     </div>
+    <div class="hdr-live">
+        <div class="live-dot"></div>
+        DC 直播中
+    </div>
+</header>
 
-    <div class="card right-panel">
-        <h3>
-            <span>🏆 中獎名單紀錄</span>
-            <button class="btn-clear-cache" onclick="resetAllStorage()">重設全系統</button>
-        </h3>
+<div class="app">
+
+    <!-- ── Left: Settings ── -->
+    <aside class="panel p-settings">
+
+        <div>
+            <div class="sec-lbl">👥 抽獎名單</div>
+            <textarea id="namesInput" placeholder="一人一行輸入名單..." oninput="onNameInput()"></textarea>
+            <div class="name-count">名單人數：<b id="nameCount">0</b> 人</div>
+        </div>
+
+        <div>
+            <div class="sec-lbl">🎁 獎項設定</div>
+            <div id="prizeRows"></div>
+            <button class="btn-ghost" onclick="addPrize('', 1)">＋ 新增獎項</button>
+        </div>
+
+        <button class="btn-danger" onclick="resetAll()">🗑 重設全系統</button>
+
+    </aside>
+
+    <!-- ── Center: Draw Stage ── -->
+    <main class="panel p-draw">
+
+        <div class="prize-selector" id="prizeTabs"></div>
+
+        <div class="slot-wrap">
+            <div class="slot-machine">
+                <div class="slot-center-bar"></div>
+                <div class="slot-state" id="slotReady">READY</div>
+                <div id="slotStrip"></div>
+                <div class="slot-state" id="winnerDisplay">
+                    <div class="particles" id="particles"></div>
+                    <div class="winner-label">🎉 恭喜中獎</div>
+                    <div class="winner-name-text" id="winnerNameText"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="draw-info">
+            <span>名單剩餘：<b id="poolCount">0</b> 人</span>
+            <span>當前獎項：<b id="infoName">—</b></span>
+            <span>剩餘名額：<b id="infoQty">—</b></span>
+        </div>
+
+        <button class="draw-btn" id="drawBtn" onclick="startDraw()">開始抽獎</button>
+
+    </main>
+
+    <!-- ── Right: History ── -->
+    <aside class="panel p-history">
+        <div class="history-header">
+            <span>🏆 中獎名單</span>
+            <span class="history-count" id="historyCount">0</span>
+        </div>
         <ul class="history-list" id="historyList"></ul>
-    </div>
+    </aside>
 
 </div>
 
 <script>
+// ─── State ──────────────────────────────────────────────────
 let prizeInventory = {};
-let selectedPrizeName = "";
-let historyData = [];
-let nameInputTimeout;
+let selectedPrize  = "";
+let historyData    = [];
+let nameDebounce;
+let isDrawing      = false;
 
-function loadFromCache() {
-    try {
-        const cachedNames = localStorage.getItem('bh_names') || "";
-        const cachedPrizes = JSON.parse(localStorage.getItem('bh_prizes')) || [];
-        const cachedHistory = JSON.parse(localStorage.getItem('bh_history')) || [];
-        selectedPrizeName = localStorage.getItem('bh_selected') || "";
+// ─── Init ────────────────────────────────────────────────────
+window.onload = () => loadCache();
 
-        document.getElementById('namesInput').value = cachedNames;
+// ─── Cache ───────────────────────────────────────────────────
+function loadCache() {
+    const names   = localStorage.getItem('bh_names')   || "";
+    const prizes  = JSON.parse(localStorage.getItem('bh_prizes')  || '[]');
+    const history = JSON.parse(localStorage.getItem('bh_history') || '[]');
+    selectedPrize = localStorage.getItem('bh_selected') || "";
 
-        const container = document.getElementById('prizeSetupContainer');
-        container.innerHTML = "";
-        
-        if (cachedPrizes.length === 0) {
-            addPrizeRow("", 1);
-        } else {
-            cachedPrizes.forEach(p => addPrizeRow(p.name, p.qty));
-        }
+    document.getElementById('namesInput').value = names;
+    updateNameCount(names);
 
-        historyData = cachedHistory;
-        const historyList = document.getElementById('historyList');
-        historyList.innerHTML = "";
-        historyData.forEach(item => {
-            const li = document.createElement('li');
-            li.innerHTML = `<span class="prize-tag">${item.prize}</span><span class="winner-name">${item.winner}</span>`;
-            historyList.appendChild(li);
-        });
-    } catch (e) {
-        addPrizeRow("", 1);
-    }
+    const rows = document.getElementById('prizeRows');
+    rows.innerHTML = "";
+    (prizes.length ? prizes : [{ name: "", qty: 1 }]).forEach(p => addPrizeRow(p.name, p.qty));
+
+    historyData = history;
+    renderHistory();
+    syncPrizeTabs();
 }
 
-function saveToCache() {
-    localStorage.setItem('bh_names', document.getElementById('namesInput').value);
-    const rows = document.querySelectorAll('.prize-input-row');
-    let prizeArr = [];
-    rows.forEach(row => {
-        const name = row.querySelector('.prize-name').value.trim();
-        const qty = parseInt(row.querySelector('.prize-qty').value) || 0;
-        if (name) prizeArr.push({ name, qty });
+function saveCache() {
+    localStorage.setItem('bh_names',    document.getElementById('namesInput').value);
+    localStorage.setItem('bh_selected', selectedPrize);
+
+    const arr = [];
+    document.querySelectorAll('.prize-row').forEach(row => {
+        const name = row.querySelector('.pr-name').value.trim();
+        const qty  = parseInt(row.querySelector('.pr-qty').value) || 0;
+        if (name) arr.push({ name, qty });
     });
-    localStorage.setItem('bh_prizes', JSON.stringify(prizeArr));
+    localStorage.setItem('bh_prizes',  JSON.stringify(arr));
     localStorage.setItem('bh_history', JSON.stringify(historyData));
-    localStorage.setItem('bh_selected', selectedPrizeName);
 }
 
-function handleNameInputDebounce() {
-    clearTimeout(nameInputTimeout);
-    const textarea = document.getElementById('namesInput');
-    const rawNames = textarea.value.split('\n').map(n => n.trim()).filter(n => n !== "");
-    document.getElementById('poolCount').innerText = `目前名單人數：${rawNames.length} 人 (正在輸入...)`;
-
-    nameInputTimeout = setTimeout(() => {
-        cleanAndDuplicateCheck();
-    }, 400);
-}
-
-function cleanAndDuplicateCheck() {
-    const textarea = document.getElementById('namesInput');
-    const rawNames = textarea.value.split('\n').map(n => n.trim()).filter(n => n !== "");
-    
-    let uniqueNames = [];
-    let duplicates = [];
-    
-    rawNames.forEach(name => {
-        if (uniqueNames.includes(name)) {
-            if (!duplicates.includes(name)) duplicates.push(name);
-        } else {
-            uniqueNames.push(name);
-        }
-    });
-    
-    if (duplicates.length > 0) {
-        alert(`【⚠️ 偵測到重複名單】\n以下人員重複，已自動過濾：\n👉 ${duplicates.join('、')}`);
-    }
-    
-    textarea.value = uniqueNames.join('\n');
-    document.getElementById('poolCount').innerText = `目前名單人數：${uniqueNames.length} 人`;
-    saveToCache();
-    return uniqueNames;
-}
-
-function autoSyncPrizeCards() {
-    const names = document.querySelectorAll('.prize-name');
-    const qtys = document.querySelectorAll('.prize-qty');
-    const board = document.getElementById('prizeCardsBoard');
-    
-    board.innerHTML = '';
-    prizeInventory = {};
-    
-    let tempInventory = {};
-    let duplicatePrizesDetected = [];
-
-    names.forEach((node, index) => {
-        const pName = node.value.trim();
-        const pQty = parseInt(qtys[index].value) || 0;
-        
-        if (pName !== "") {
-            if (tempInventory[pName] !== undefined) {
-                tempInventory[pName] += pQty;
-                if (!duplicatePrizesDetected.includes(pName)) {
-                    duplicatePrizesDetected.push(pName);
-                }
-            } else {
-                tempInventory[pName] = pQty;
-            }
-        }
-    });
-
-    if (duplicatePrizesDetected.length > 0) {
-        alert(`【🎁 獎項重複合併提示】\n偵測到重複的獎項名稱：${duplicatePrizesDetected.join('、')}\n系統已自動為您將數量相加並融合成單一字卡。`);
-        const container = document.getElementById('prizeSetupContainer');
-        container.innerHTML = "";
-        for (let name in tempInventory) {
-            addPrizeRowWithoutSync(name, tempInventory[name]);
-        }
-    }
-
-    prizeInventory = tempInventory;
-    for (let pName in prizeInventory) {
-        const card = document.createElement('div');
-        card.className = 'prize-badge-card';
-        
-        if (prizeInventory[pName] <= 0) {
-            card.className += ' soldout';
-        } else if (pName === selectedPrizeName) {
-            card.className += ' active';
-        }
-
-        card.innerHTML = `
-            <span class="p-name">${pName}</span>
-            <span class="p-qty">剩餘 ${prizeInventory[pName]} 個</span>
-        `;
-        
-        card.onclick = function() {
-            if (prizeInventory[pName] > 0) selectPrizeCard(pName);
-        };
-        board.appendChild(card);
-    }
-
-    if (selectedPrizeName && (!prizeInventory[selectedPrizeName] || prizeInventory[selectedPrizeName] <= 0)) {
-        selectedPrizeName = "";
-        const cards = document.querySelectorAll('.prize-badge-card');
-        cards.forEach(c => c.classList.remove('active'));
-    }
-    saveToCache();
-}
-
-function selectPrizeCard(prizeName) {
-    selectedPrizeName = prizeName;
-    const cards = document.querySelectorAll('.prize-badge-card');
-    cards.forEach(card => {
-        if (card.querySelector('.p-name').innerText === prizeName) {
-            card.classList.add('active');
-        } else {
-            card.classList.remove('active');
-        }
-    });
-    saveToCache();
-}
-
-function addPrizeRow(name = "", qty = 1) {
-    addPrizeRowWithoutSync(name, qty);
-    autoSyncPrizeCards();
-}
-
-function addPrizeRowWithoutSync(name = "", qty = 1) {
-    const container = document.getElementById('prizeSetupContainer');
-    const row = document.createElement('div');
-    row.className = 'prize-input-row';
-    row.innerHTML = `
-        <input type="text" class="prize-name" placeholder="獎項名稱" style="flex: 3;" value="${name}" oninput="autoSyncPrizeCards()">
-        <input type="number" class="prize-qty" placeholder="數量" style="flex: 1;" min="0" value="${qty}" oninput="autoSyncPrizeCards()">
-        <button class="btn-del" onclick="removePrizeRow(this)">❌</button>
-    `;
-    container.appendChild(row);
-}
-
-function removePrizeRow(btn) {
-    const rows = document.querySelectorAll('.prize-input-row');
-    if (rows.length === 1) {
-        alert("請至少保留一個獎項設定欄位！");
-        return;
-    }
-    btn.parentElement.remove();
-    autoSyncPrizeCards();
-}
-
-function startPerfectDraw() {
-    const textarea = document.getElementById('namesInput');
-    const drawBtn = document.getElementById('drawBtn');
-    const resultText = document.getElementById('resultText');
-    
-    const currentPool = cleanAndDuplicateCheck();
-    
-    if (currentPool.length === 0) {
-        alert("抽獎名單是空的，請先輸入名單！");
-        return;
-    }
-    if (!selectedPrizeName) {
-        alert("⚠️ 請先在下方點選一個要抽取的發光獎項字卡！");
-        return;
-    }
-    
-    const realWinnerIndex = Math.floor(Math.random() * currentPool.length);
-    const realWinner = currentPool[realWinnerIndex];
-
-    drawBtn.disabled = true;
-    resultText.className = "rolling";
-    
-    let counter = 0;
-    const totalRolls = 32;
-    let currentSpeed = 45;
-
-    function runSmoothAnimation() {
-        counter++;
-
-        if (counter < totalRolls - 3) {
-            let tempIndex = Math.floor(Math.random() * currentPool.length);
-            resultText.innerText = currentPool[tempIndex];
-            setTimeout(runSmoothAnimation, currentSpeed);
-        } 
-        else if (counter === totalRolls - 3) {
-            let fakeList = currentPool.filter(n => n !== realWinner);
-            resultText.innerText = fakeList.length > 0 ? fakeList[Math.floor(Math.random() * fakeList.length)] : realWinner;
-            setTimeout(runSmoothAnimation, currentSpeed + 80);
-        }
-        else if (counter === totalRolls - 2) {
-            let fakeList = currentPool.filter(n => n !== realWinner);
-            resultText.innerText = fakeList.length > 0 ? fakeList[Math.floor(Math.random() * fakeList.length)] : realWinner;
-            setTimeout(runSmoothAnimation, currentSpeed + 200);
-        }
-        else if (counter === totalRolls - 1) {
-            let fakeList = currentPool.filter(n => n !== realWinner);
-            resultText.innerText = fakeList.length > 0 ? fakeList[Math.floor(Math.random() * fakeList.length)] : realWinner;
-            setTimeout(runSmoothAnimation, currentSpeed + 450);
-        }
-        else {
-            finalizeWinner(currentPool, realWinnerIndex, realWinner);
-        }
-    }
-    
-    runSmoothAnimation();
-}
-
-function finalizeWinner(currentPool, winnerIndex, winner) {
-    const textarea = document.getElementById('namesInput');
-    const drawBtn = document.getElementById('drawBtn');
-    const resultText = document.getElementById('resultText');
-    const targetPrize = selectedPrizeName;
-    
-    prizeInventory[targetPrize]--;
-    const rows = document.querySelectorAll('.prize-input-row');
-    rows.forEach(row => {
-        const nameInput = row.querySelector('.prize-name');
-        const qtyInput = row.querySelector('.prize-qty');
-        if (nameInput.value.trim() === targetPrize) {
-            qtyInput.value = prizeInventory[targetPrize];
-        }
-    });
-    
-    currentPool.splice(winnerIndex, 1);
-    textarea.value = currentPool.join('\n');
-    document.getElementById('poolCount').innerText = `目前名單人數：${currentPool.length} 人`;
-    
-    resultText.className = "roll-done";
-    resultText.innerHTML = `🎉 中獎：${winner}`;
-    
-    const newRecord = { prize: targetPrize, winner: winner };
-    historyData.unshift(newRecord);
-    
-    const historyList = document.getElementById('historyList');
-    const li = document.createElement('li');
-    li.innerHTML = `<span class="prize-tag">${targetPrize}</span><span class="winner-name">${winner}</span>`;
-    historyList.insertBefore(li, historyList.firstChild);
-    
-    if (prizeInventory[targetPrize] <= 0) {
-        selectedPrizeName = "";
-    }
-    
-    autoSyncPrizeCards();
-    drawBtn.disabled = false;
-}
-
-function resetAllStorage() {
-    if (confirm("⚠️ 確定要清除所有快取資料嗎？名單與紀錄將無法恢復。")) {
+function resetAll() {
+    if (confirm("⚠️ 確定重設所有資料？此操作不可復原。")) {
         localStorage.clear();
         location.reload();
     }
 }
 
-window.onload = function() {
-    loadFromCache();
-    cleanAndDuplicateCheck();
-    autoSyncPrizeCards();
-};
+// ─── Names ───────────────────────────────────────────────────
+function onNameInput() {
+    clearTimeout(nameDebounce);
+    updateNameCount(document.getElementById('namesInput').value);
+    nameDebounce = setTimeout(deduplicateNames, 600);
+}
+
+function updateNameCount(raw) {
+    const n = raw.split('\n').map(s => s.trim()).filter(Boolean).length;
+    document.getElementById('nameCount').textContent = n;
+    document.getElementById('poolCount').textContent = n;
+}
+
+function deduplicateNames() {
+    const ta  = document.getElementById('namesInput');
+    const raw = ta.value.split('\n').map(s => s.trim()).filter(Boolean);
+    const unique = [], dupes = [];
+    raw.forEach(n => {
+        if (unique.includes(n)) { if (!dupes.includes(n)) dupes.push(n); }
+        else unique.push(n);
+    });
+    if (dupes.length) alert(`偵測到重複名稱，已自動過濾：\n${dupes.join('、')}`);
+    ta.value = unique.join('\n');
+    updateNameCount(ta.value);
+    saveCache();
+    return unique;
+}
+
+function getNames() {
+    return document.getElementById('namesInput').value.split('\n').map(s => s.trim()).filter(Boolean);
+}
+
+// ─── Prize Rows (settings) ───────────────────────────────────
+function addPrize(name, qty) {
+    addPrizeRow(name, qty);
+    syncPrizeTabs();
+}
+
+function addPrizeRow(name = "", qty = 1) {
+    const container = document.getElementById('prizeRows');
+    const row = document.createElement('div');
+    row.className = 'prize-row';
+    row.innerHTML = `
+        <input class="pr-name" type="text"   placeholder="獎項名稱" value="${esc(name)}" oninput="syncPrizeTabs()">
+        <input class="pr-qty"  type="number" placeholder="數量" min="0" value="${qty}"   oninput="syncPrizeTabs()">
+        <button class="btn-del" onclick="removePrizeRow(this)" title="移除">✕</button>
+    `;
+    container.appendChild(row);
+}
+
+function removePrizeRow(btn) {
+    if (document.querySelectorAll('.prize-row').length <= 1) {
+        alert("請至少保留一個獎項！");
+        return;
+    }
+    btn.parentElement.remove();
+    syncPrizeTabs();
+}
+
+// ─── Prize Tabs ──────────────────────────────────────────────
+function syncPrizeTabs() {
+    // Rebuild inventory (merge duplicates)
+    const inv = {};
+    document.querySelectorAll('.prize-row').forEach(row => {
+        const name = row.querySelector('.pr-name').value.trim();
+        const qty  = parseInt(row.querySelector('.pr-qty').value) || 0;
+        if (name) inv[name] = (inv[name] || 0) + qty;
+    });
+    prizeInventory = inv;
+
+    // Validate selection
+    if (selectedPrize && (!prizeInventory[selectedPrize] || prizeInventory[selectedPrize] <= 0)) {
+        selectedPrize = "";
+    }
+
+    // Render
+    const board = document.getElementById('prizeTabs');
+    board.innerHTML = '';
+
+    const entries = Object.entries(prizeInventory);
+    if (entries.length === 0) {
+        board.innerHTML = '<div class="no-prize-hint">尚未設定任何獎項</div>';
+    } else {
+        entries.forEach(([name, qty]) => {
+            const soldout = qty <= 0;
+            const active  = name === selectedPrize;
+            const tab = document.createElement('div');
+            tab.className = 'prize-tab' + (soldout ? ' soldout' : '') + (active ? ' active' : '');
+            tab.innerHTML = `<span class="t-name">${esc(name)}</span>
+                             <span class="t-qty">${soldout ? '已抽完' : `剩 ${qty} 個`}</span>`;
+            if (!soldout) tab.onclick = () => selectPrize(name);
+            board.appendChild(tab);
+        });
+    }
+
+    updateInfoBar();
+    saveCache();
+}
+
+function selectPrize(name) {
+    selectedPrize = name;
+    document.querySelectorAll('.prize-tab').forEach(tab => {
+        tab.classList.toggle('active', tab.querySelector('.t-name').textContent === name);
+    });
+    updateInfoBar();
+    saveCache();
+}
+
+function updateInfoBar() {
+    const hasSelection = selectedPrize && prizeInventory[selectedPrize] !== undefined;
+    document.getElementById('infoName').textContent = hasSelection ? selectedPrize : '—';
+    document.getElementById('infoQty').textContent  = hasSelection ? prizeInventory[selectedPrize] + ' 個' : '—';
+}
+
+// ─── History ─────────────────────────────────────────────────
+function renderHistory() {
+    const list = document.getElementById('historyList');
+    list.innerHTML = '';
+    historyData.forEach(item => list.appendChild(makeHistoryLi(item)));
+    document.getElementById('historyCount').textContent = historyData.length;
+}
+
+function makeHistoryLi({ prize, winner }) {
+    const li = document.createElement('li');
+    li.className = 'history-item';
+    li.innerHTML = `<span class="hi-prize">${esc(prize)}</span><span class="hi-winner">${esc(winner)}</span>`;
+    return li;
+}
+
+function pushHistory(prize, winner) {
+    historyData.unshift({ prize, winner });
+    const list = document.getElementById('historyList');
+    list.insertBefore(makeHistoryLi({ prize, winner }), list.firstChild);
+    document.getElementById('historyCount').textContent = historyData.length;
+}
+
+// ─── Draw ────────────────────────────────────────────────────
+function startDraw() {
+    if (isDrawing) return;
+    const names = deduplicateNames();
+    if (!names.length)  { alert("名單是空的！"); return; }
+    if (!selectedPrize) { alert("請先選擇一個獎項！"); return; }
+    if (!prizeInventory[selectedPrize] || prizeInventory[selectedPrize] <= 0) {
+        alert("此獎項已全數抽完！"); return;
+    }
+
+    isDrawing = true;
+    document.getElementById('drawBtn').disabled = true;
+
+    const winnerIdx = Math.floor(Math.random() * names.length);
+    const winner    = names[winnerIdx];
+
+    runSlotMachine(names, winner, () => finalizeWinner(names, winnerIdx, winner));
+}
+
+// ─── Slot Machine ─────────────────────────────────────────────
+function runSlotMachine(names, winner, onComplete) {
+    const ITEM_H    = 72;
+    const MACHINE_H = 360;
+    const CENTER_Y  = MACHINE_H / 2 - ITEM_H / 2; // 144px — offset for item[0] to be centered
+
+    // Build scroll sequence
+    const minItems = 55;
+    const rounds   = Math.max(4, Math.ceil(minItems / names.length));
+    const seq      = [];
+    for (let r = 0; r < rounds; r++) {
+        seq.push(...[...names].sort(() => Math.random() - 0.5));
+    }
+    seq.push(winner); // winner is always the last item
+
+    // Render strip
+    const strip = document.getElementById('slotStrip');
+    strip.style.transform = `translateY(${CENTER_Y}px)`;
+    strip.innerHTML = seq.map(n => `<div class="slot-item">${esc(n)}</div>`).join('');
+
+    // Switch to strip view
+    document.getElementById('slotReady').style.display    = 'none';
+    document.getElementById('winnerDisplay').style.display = 'none';
+    strip.style.display = 'block';
+
+    // Scroll animation
+    let idx     = 0;
+    let speed   = 38;
+    const endIdx = seq.length - 1;
+
+    function step() {
+        strip.style.transform = `translateY(${CENTER_Y - idx * ITEM_H}px)`;
+
+        if (idx >= endIdx) {
+            // Winner is centered — pause then reveal
+            setTimeout(() => {
+                strip.style.display = 'none';
+                revealWinner(winner);
+                onComplete();
+            }, 650);
+            return;
+        }
+
+        idx++;
+        const progress = idx / endIdx;
+        // Keep fast for first 62%, then ease out with cubic curve
+        speed = progress < 0.62
+            ? 38
+            : 38 + Math.pow((progress - 0.62) / 0.38, 2.8) * 580;
+
+        setTimeout(step, speed);
+    }
+
+    step();
+}
+
+function revealWinner(winner) {
+    const wd  = document.getElementById('winnerDisplay');
+    const txt = document.getElementById('winnerNameText');
+
+    // Reset CSS animation by removing and re-applying
+    txt.style.animation = 'none';
+    txt.textContent = winner;
+    wd.style.display = 'flex';
+    txt.offsetHeight; // force reflow
+    txt.style.animation = '';
+
+    // Particle burst
+    spawnParticles();
+}
+
+function spawnParticles() {
+    const container = document.getElementById('particles');
+    container.innerHTML = '';
+    const colors = ['#f0c060','#c9973a','#ffffff','#d42a3a','#ff99aa','#fff7cc'];
+    for (let i = 0; i < 28; i++) {
+        const p     = document.createElement('div');
+        p.className = 'particle';
+        const angle = Math.random() * Math.PI * 2;
+        const dist  = 50 + Math.random() * 110;
+        p.style.cssText = `
+            background: ${colors[i % colors.length]};
+            left: 50%; top: 50%;
+            margin: -3.5px 0 0 -3.5px;
+            --dx: ${(Math.cos(angle) * dist).toFixed(1)}px;
+            --dy: ${(Math.sin(angle) * dist).toFixed(1)}px;
+            animation-delay: ${(Math.random() * 0.15).toFixed(2)}s;
+        `;
+        container.appendChild(p);
+        setTimeout(() => p.remove(), 1100);
+    }
+}
+
+function finalizeWinner(names, winnerIdx, winner) {
+    const ta    = document.getElementById('namesInput');
+    const prize = selectedPrize;
+
+    names.splice(winnerIdx, 1);
+    ta.value = names.join('\n');
+    updateNameCount(ta.value);
+
+    prizeInventory[prize]--;
+    document.querySelectorAll('.prize-row').forEach(row => {
+        if (row.querySelector('.pr-name').value.trim() === prize) {
+            row.querySelector('.pr-qty').value = prizeInventory[prize];
+        }
+    });
+
+    if (prizeInventory[prize] <= 0) selectedPrize = "";
+
+    pushHistory(prize, winner);
+    syncPrizeTabs();
+    saveCache();
+
+    isDrawing = false;
+    document.getElementById('drawBtn').disabled = false;
+}
+
+// ─── Util ────────────────────────────────────────────────────
+function esc(str) {
+    return String(str)
+        .replace(/&/g,'&amp;')
+        .replace(/"/g,'&quot;')
+        .replace(/</g,'&lt;')
+        .replace(/>/g,'&gt;');
+}
 </script>
 
 </body>
