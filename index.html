@@ -223,76 +223,6 @@
             flex-shrink: 0;
         }
         .btn-del:hover { color: var(--crimson-lit); border-color: rgba(212,42,58,.4); }
-        .btn-blind {
-            display: none; /* kept for snapshot compat, hidden from UI */
-        }
-
-        /* ─── Blind Box Config Section ─── */
-        .blind-config {
-            margin-top:8px; border:1px solid var(--border-hi);
-            border-radius:8px; overflow:hidden; background:rgba(14,17,28,.4);
-        }
-        .blind-cfg-header {
-            display:flex; align-items:center; justify-content:space-between;
-            padding:7px 12px; cursor:pointer; user-select:none;
-            font-size:12px; color:var(--text-sub); transition:color .2s;
-        }
-        .blind-cfg-header:hover { color:var(--gold); }
-        .blind-cfg-arrow { font-size:10px; transition:transform .25s; }
-        .blind-cfg-header.open .blind-cfg-arrow { transform:rotate(90deg); }
-        .blind-cfg-body { display:none; padding:8px 12px 10px; border-top:1px solid var(--border); }
-        .blind-cfg-body.open { display:block; }
-        .blind-check-row {
-            display:flex; align-items:center; gap:8px;
-            padding:5px 0; cursor:pointer; font-size:13px; color:var(--text);
-        }
-        .blind-check-row input[type="checkbox"] { accent-color:var(--gold); width:14px; height:14px; cursor:pointer; }
-        .blind-cfg-empty { color:var(--text-sub); font-size:12px; text-align:center; padding:6px 0; }
-
-        /* Blind badge on individual prize tabs */
-        .blind-badge { font-size:10px; margin-left:3px; opacity:.75; vertical-align:middle; }
-        .prize-tab.blind-tagged { border-color: rgba(201,151,58,.35); }
-
-        /* ─── Blind Open Button (inside winner display) ─── */
-        .blind-open-btn {
-            margin-top:10px;
-            background:linear-gradient(135deg,rgba(155,26,42,.5),rgba(201,151,58,.25));
-            border:1px solid rgba(201,151,58,.5); border-radius:8px;
-            color:var(--gold-light); font-family:inherit; font-size:15px; font-weight:700;
-            padding:10px 28px; cursor:pointer;
-            animation:blindPulse 1.6s ease-in-out infinite; transition:background .2s;
-        }
-        .blind-open-btn:hover { background:linear-gradient(135deg,rgba(155,26,42,.75),rgba(201,151,58,.4)); }
-        @keyframes blindPulse {
-            0%,100%{box-shadow:0 0 10px rgba(201,151,58,.3);}
-            50%{box-shadow:0 0 28px rgba(201,151,58,.65),0 0 60px rgba(201,151,58,.2);}
-        }
-
-        /* ─── Blind Box Inline Slot (inside #winnerPrizeReveal) ─── */
-        .prize-slot-label {
-            font-size:11px; color:var(--text-sub); letter-spacing:.05em; margin-bottom:6px;
-        }
-        .prize-slot-wrap {
-            height:52px; overflow:hidden; border:1px solid rgba(201,151,58,.3);
-            border-radius:6px; background:rgba(201,151,58,.04);
-            position:relative; width:min(220px,85%);
-        }
-        .prize-slot-bar {
-            position:absolute; top:50%; left:0; right:0; height:1px;
-            background:linear-gradient(90deg,transparent,var(--gold),transparent);
-            transform:translateY(-50%); z-index:2; opacity:.5; pointer-events:none;
-        }
-        .prize-slot-strip { position:absolute; width:100%; will-change:transform; }
-        .prize-slot-item {
-            height:52px; display:flex; align-items:center; justify-content:center;
-            font-family:'Noto Serif TC',serif; font-size:16px; font-weight:700; color:var(--gold-light);
-        }
-        .prize-revealed-name {
-            margin-top:8px; font-family:'Noto Serif TC',serif; font-size:20px; font-weight:700;
-            color:var(--gold-light); animation:winPop .5s ease-out;
-            text-shadow:0 0 22px var(--gold-light),0 0 55px var(--gold-glow);
-        }
-
         .btn-ghost {
             background: transparent;
             color: var(--text-sub);
@@ -550,7 +480,7 @@
             background: rgba(6,8,16,.92);
             backdrop-filter: blur(16px);
             -webkit-backdrop-filter: blur(16px);
-            z-index: 9001; /* above pageLock (9000) so blind-box button stays clickable */
+            z-index: 9001;
             display: none;
         }
         .winner-label {
@@ -575,7 +505,29 @@
             color: var(--crimson-lit);
             text-shadow: 0 0 30px var(--crimson-lit), 0 0 80px var(--crimson-glow);
         }
-        #winnerPrizeReveal { min-height: 58px; }
+        #winnerPrizeReveal { min-height: 58px; display:flex; flex-direction:column; align-items:center; gap:10px; }
+
+        /* ─── Multi-winner grid (quick-mode batch) ─── */
+        .multi-winner-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px 18px;
+            justify-content: center;
+            max-height: 200px;
+            overflow-y: auto;
+            padding: 4px 8px;
+        }
+        .multi-winner-grid::-webkit-scrollbar { width: 4px; }
+        .multi-winner-grid::-webkit-scrollbar-thumb { background: var(--border-hi); border-radius: 4px; }
+        .multi-winner-item {
+            font-family: 'ZCOOL XiaoWei', 'Noto Serif TC', serif;
+            font-size: 26px;
+            font-weight: 400;
+            color: #fff;
+            letter-spacing: 3px;
+            text-shadow: 0 0 20px var(--gold-light), 0 0 50px var(--gold-glow);
+            animation: winPop .5s cubic-bezier(.175,.885,.32,1.275) both;
+        }
         /* particle container */
         #winnerDisplay .particles {
             position: absolute;
@@ -864,46 +816,6 @@
             transition: all .2s;
         }
         .btn-export:hover { color: var(--gold); border-color: rgba(201,151,58,.4); }
-        .log-trigger {
-            position:fixed; bottom:72px; right:20px;
-            background:rgba(14,17,28,.92); border:1px solid rgba(201,151,58,.35);
-            color:var(--gold); font-size:18px; width:40px; height:40px;
-            border-radius:50%; cursor:pointer; z-index:990;
-            display:flex; align-items:center; justify-content:center;
-            transition:all .2s;
-        }
-        .log-trigger:hover { background:rgba(201,151,58,.15); }
-        .log-overlay {
-            position:fixed; inset:0; background:rgba(0,0,0,.7);
-            z-index:1000; display:none; align-items:center; justify-content:center;
-            backdrop-filter:blur(4px);
-        }
-        .log-overlay.open { display:flex; }
-        .log-panel {
-            background:#0b0d13; border:1px solid rgba(201,151,58,.3);
-            border-radius:14px; width:min(480px,90vw); max-height:75vh;
-            display:flex; flex-direction:column; overflow:hidden;
-        }
-        .log-panel-header {
-            display:flex; justify-content:space-between; align-items:center;
-            padding:16px 20px; border-bottom:1px solid var(--border);
-            font-family:'Noto Serif TC',serif; font-size:14px; font-weight:700; color:var(--gold-light);
-        }
-        .log-close {
-            background:none; border:none; color:var(--text-sub); font-size:16px;
-            cursor:pointer; padding:4px 8px; border-radius:4px;
-        }
-        .log-close:hover { color:var(--crimson-lit); }
-        .log-list { list-style:none; overflow-y:auto; flex:1; padding:12px 0; }
-        .log-item {
-            display:grid; grid-template-columns:80px 1fr 1fr;
-            align-items:center; padding:9px 20px; border-bottom:1px solid var(--border);
-            font-size:13px; gap:8px;
-        }
-        .log-time { color:var(--text-sub); font-size:11px; font-variant-numeric:tabular-nums; }
-        .log-prize { color:var(--gold); font-size:11px; }
-        .log-winner { color:var(--text); font-weight:700; text-align:right; }
-        .log-empty { display:none; text-align:center; padding:40px; color:var(--text-sub); font-size:13px; }
 
         /* ─── RWD ─── */
         @media (max-width: 768px) {
@@ -947,29 +859,24 @@
         <div>
             <label class="sec-lbl" for="namesInput">👥 抽獎名單</label>
             <textarea id="namesInput" placeholder="一人一行輸入名單..."></textarea>
-            <div class="name-count">名單人數：<b id="nameCount">0</b> 人</div>
+            <div class="name-count">名單人數：<b id="nameCount">0</b></div>
         </div>
 
         <div>
             <div class="sec-lbl">🎁 獎項設定</div>
             <div id="prizeRows"></div>
             <button class="btn-ghost">＋ 新增獎項</button>
-            <div class="blind-config" id="blindConfig">
-                <div class="blind-cfg-header" id="blindCfgHeader">
-                    🎰 盲盒設定
-                    <span class="blind-cfg-arrow">▶</span>
-                </div>
-                <div class="blind-cfg-body" id="blindCfgBody">
-                    <div class="blind-cfg-empty">請先新增獎項</div>
-                </div>
-            </div>
         </div>
 
         <div class="setting-row">
-            <span class="sec-lbl" style="margin-bottom:0">⚙️ 抽獎規則</span>
+            <span class="sec-lbl" style="margin-bottom:0">⚙️ 抽獎設定</span>
             <label class="toggle-label">
                 <input type="checkbox" id="autoRemoveToggle" checked>
                 <span>抽中後自動剔除名單</span>
+            </label>
+            <label class="toggle-label">
+                <input type="checkbox" id="quickModeToggle">
+                <span>快速模式（略過動畫）</span>
             </label>
         </div>
 
@@ -1053,27 +960,26 @@ const KEYS = {
     history: 'bh_history',
     selected: 'bh_selected',
     autoRemove: 'bh_autoremove',
-    opLog: 'bh_oplog',
     batch: 'bh_batch',
-    blind: 'bh_blind'
+    quickMode: 'bh_quickmode'
 };
-// Sentinel value used when the "blind pool" tab is selected
-const BLIND_KEY = '__blind__';
 
 // ─── State ───────────────────────────────────────────────────
 let prizeInventory = {};
-let blindPrizes    = new Set();
 let selectedPrize  = "";
 let historyData    = [];
-let opLog          = [];
 let nameDebounce;
 let saveCacheTimer;
+let syncTabsTimer;
+let resetStageTimer;
 let toastTimer;
 let isDrawing      = false;
 let autoRemove     = true;
 let batchCount     = 1;
 let undoStack      = [];
 let redoStack      = [];
+let quickMode      = false;
+let pendingSpecialEvent = null;
 
 // ─── Init ────────────────────────────────────────────────────
 window.addEventListener('load', init);
@@ -1093,27 +999,36 @@ function init() {
         saveCacheDebounced();
     });
     document.getElementById('batchInput').addEventListener('input', e => {
+        const v = parseInt(e.target.value, 10);
+        if (!isNaN(v)) {
+            batchCount = clamp(v, 1, 50);
+            e.target.value = batchCount;
+        }
+        saveCacheDebounced();
+    });
+    document.getElementById('batchInput').addEventListener('blur', e => {
         batchCount = clamp(parseInt(e.target.value, 10) || 1, 1, 50);
         e.target.value = batchCount;
         saveCacheDebounced();
     });
-    document.getElementById('logTrigger').addEventListener('click', openLog);
-    document.getElementById('logClose').addEventListener('click', closeLog);
-    document.getElementById('logOverlay').addEventListener('click', e => {
-        if (e.target.id === 'logOverlay') closeLog();
-    });
-
-    // Blind config panel toggle
-    document.getElementById('blindCfgHeader').addEventListener('click', () => {
-        const header = document.getElementById('blindCfgHeader');
-        const body = document.getElementById('blindCfgBody');
-        header.classList.toggle('open');
-        body.classList.toggle('open');
+    document.getElementById('quickModeToggle').addEventListener('change', e => {
+        quickMode = e.target.checked;
+        saveCacheDebounced();
     });
 
     const prizeRowsEl = document.getElementById('prizeRows');
     prizeRowsEl.addEventListener('input', e => {
-        if (e.target.matches('.pr-name, .pr-qty')) syncPrizeTabs();
+        if (e.target.matches('.pr-name, .pr-qty')) {
+            clearTimeout(syncTabsTimer);
+            syncTabsTimer = setTimeout(syncPrizeTabs, 300);
+        }
+    });
+    prizeRowsEl.addEventListener('change', e => {
+        // Fire immediately on committed changes (e.g. blur, spin buttons)
+        if (e.target.matches('.pr-name, .pr-qty')) {
+            clearTimeout(syncTabsTimer);
+            syncPrizeTabs();
+        }
     });
     prizeRowsEl.addEventListener('click', e => {
         const delBtn = e.target.closest('.btn-del');
@@ -1121,11 +1036,14 @@ function init() {
     });
 
     updateUndoRedoBtns();
-    renderLog();
 }
 
 document.addEventListener('keydown', e => {
-    if (e.key === 'Escape') closeLog();
+    if ((e.key === 'k' || e.key === 'K') && (e.ctrlKey || e.metaKey) && !isDrawing) {
+        e.preventDefault();
+        pendingSpecialEvent = Math.random() < 0.5 ? 'fakeDecree' : 'intercept';
+        return;
+    }
     if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
     if ((e.key === ' ' || e.key === 'Enter') && !isDrawing) {
         e.preventDefault();
@@ -1167,16 +1085,16 @@ function loadCache() {
     const names      = localStorage.getItem(KEYS.names) || "";
     const prizes     = parseCacheJSON(KEYS.prizes, []);
     const history    = normalizeHistory(parseCacheJSON(KEYS.history, []));
-    const savedLog   = normalizeHistory(parseCacheJSON(KEYS.opLog, []));
     const savedBatch = parseInt(localStorage.getItem(KEYS.batch), 10);
-    const savedBlind = parseCacheJSON(KEYS.blind, null);
 
     selectedPrize = localStorage.getItem(KEYS.selected) || "";
     autoRemove = localStorage.getItem(KEYS.autoRemove) !== 'false';
+    quickMode  = localStorage.getItem(KEYS.quickMode)  === 'true';
     batchCount = clamp(Number.isFinite(savedBatch) ? savedBatch : 1, 1, 50);
 
     document.getElementById('namesInput').value = names;
     document.getElementById('autoRemoveToggle').checked = autoRemove;
+    document.getElementById('quickModeToggle').checked  = quickMode;
     document.getElementById('batchInput').value = batchCount;
     updateNameCount(names);
 
@@ -1184,31 +1102,20 @@ function loadCache() {
     rows.innerHTML = "";
     (prizes.length ? prizes : [{ name: "", qty: 1 }]).forEach(p => addPrizeRow(p.name, p.qty));
 
-    // Restore blind prizes: prefer dedicated key, fall back to per-row migration
-    if (Array.isArray(savedBlind)) {
-        blindPrizes = new Set(savedBlind);
-    } else {
-        blindPrizes = new Set(prizes.filter(p => p.blind).map(p => p.name));
-    }
-
     historyData = history;
-    opLog = (savedLog.length ? savedLog : historyData).slice();
     renderHistory();
-    renderLog();
     syncPrizeTabs();
     resetStage();
 }
 
 function saveCache() {
-    opLog = historyData.slice();
     localStorage.setItem(KEYS.names, document.getElementById('namesInput').value);
     localStorage.setItem(KEYS.selected, selectedPrize);
     localStorage.setItem(KEYS.prizes, JSON.stringify(collectPrizeRows()));
     localStorage.setItem(KEYS.history, JSON.stringify(historyData));
     localStorage.setItem(KEYS.autoRemove, autoRemove ? 'true' : 'false');
-    localStorage.setItem(KEYS.opLog, JSON.stringify(opLog));
+    localStorage.setItem(KEYS.quickMode,  quickMode  ? 'true' : 'false');
     localStorage.setItem(KEYS.batch, String(batchCount));
-    localStorage.setItem(KEYS.blind, JSON.stringify([...blindPrizes]));
 }
 
 function saveCacheDebounced() {
@@ -1223,21 +1130,13 @@ function resetAll() {
     }
 }
 
-// ─── Toast / Log ─────────────────────────────────────────────
+// ─── Toast ───────────────────────────────────────────────────
 function showToast(msg, duration = 2800) {
     const el = document.getElementById('toast');
     el.textContent = msg;
     el.classList.add('show');
     clearTimeout(toastTimer);
     toastTimer = setTimeout(() => el.classList.remove('show'), duration);
-}
-
-function openLog() {
-    document.getElementById('logOverlay').classList.add('open');
-}
-
-function closeLog() {
-    document.getElementById('logOverlay').classList.remove('open');
 }
 
 // ─── Names ───────────────────────────────────────────────────
@@ -1250,7 +1149,9 @@ function onNameInput() {
 function updateNameCount(raw) {
     const lines  = raw.split('\n').map(s => s.trim()).filter(Boolean);
     const unique = new Set(lines).size;
-    document.getElementById('nameCount').textContent = lines.length;
+    const dupeCount = lines.length - unique;
+    document.getElementById('nameCount').textContent =
+        dupeCount > 0 ? `${unique} 人（含 ${dupeCount} 筆重複）` : `${unique} 人`;
     document.getElementById('poolCount').textContent = unique;
 }
 
@@ -1258,16 +1159,21 @@ function deduplicateNames() {
     const ta     = document.getElementById('namesInput');
     const raw    = ta.value.split('\n').map(s => s.trim()).filter(Boolean);
     const seen   = new Set();
+    const dupeSeen = new Set();
     const dupes  = [];
     const unique = raw.filter(n => {
         if (seen.has(n)) {
-            if (!dupes.includes(n)) dupes.push(n);
+            if (!dupeSeen.has(n)) { dupes.push(n); dupeSeen.add(n); }
             return false;
         }
         seen.add(n);
         return true;
     });
-    if (dupes.length) showToast(`已自動過濾重複名稱：${dupes.join('、')}`);
+    if (dupes.length) {
+        const shown = dupes.slice(0, 3).join('、');
+        const extra = dupes.length > 3 ? `…等 ${dupes.length} 項` : '';
+        showToast(`已自動過濾重複名稱：${shown}${extra}`);
+    }
     ta.value = unique.join('\n');
     updateNameCount(ta.value);
     saveCacheDebounced();
@@ -1316,15 +1222,22 @@ function collectPrizeRows() {
 }
 
 // ─── Prize Tabs ──────────────────────────────────────────────
+function syncPrizeRowQty(prize) {
+    document.querySelectorAll('.prize-row').forEach(row => {
+        if (row.querySelector('.pr-name').value.trim() === prize)
+            row.querySelector('.pr-qty').value = prizeInventory[prize] ?? 0;
+    });
+}
+
 function syncPrizeTabs() {
-    const seen = {};
+    const seen = Object.create(null);
     document.querySelectorAll('.prize-row').forEach(row => {
         const nameEl = row.querySelector('.pr-name');
         const qtyEl  = row.querySelector('.pr-qty');
         const name   = nameEl.value.trim();
         const qty    = parseInt(qtyEl.value, 10) || 0;
         if (!name) return;
-        if (seen[name]) {
+        if (Object.hasOwn(seen, name)) {
             seen[name].total += qty;
             row.remove();
         } else {
@@ -1333,59 +1246,17 @@ function syncPrizeTabs() {
     });
     Object.values(seen).forEach(({ qtyEl, total }) => { qtyEl.value = total; });
 
-    prizeInventory = Object.fromEntries(
-        Object.entries(seen).map(([name, meta]) => [name, meta.total])
+    prizeInventory = Object.assign(Object.create(null),
+        Object.fromEntries(Object.entries(seen).map(([name, meta]) => [name, meta.total]))
     );
-    // Clean up blind prizes that no longer exist
-    blindPrizes = new Set([...blindPrizes].filter(p => prizeInventory[p] !== undefined));
 
-    if (selectedPrize === BLIND_KEY) {
-        if (getBlindPoolTotal() <= 0) selectedPrize = '';
-    } else if (selectedPrize && (!prizeInventory[selectedPrize] || prizeInventory[selectedPrize] <= 0)) {
+    if (selectedPrize && (!Object.hasOwn(prizeInventory, selectedPrize) || prizeInventory[selectedPrize] <= 0)) {
         selectedPrize = '';
     }
 
     renderTabs();
     updateInfoBar();
-    syncBlindConfig();
     saveCacheDebounced();
-}
-
-function syncBlindConfig() {
-    const body = document.getElementById('blindCfgBody');
-    if (!body) return;
-    const prizes = Object.keys(prizeInventory);
-    if (!prizes.length) {
-        body.innerHTML = '<div class="blind-cfg-empty">請先新增獎項</div>';
-        return;
-    }
-    body.innerHTML = prizes.map(name => `
-        <label class="blind-check-row">
-            <input type="checkbox" class="blind-check" value="${esc(name)}"${blindPrizes.has(name) ? ' checked' : ''}>
-            <span>${esc(name)}</span>
-        </label>
-    `).join('');
-    body.querySelectorAll('.blind-check').forEach(cb => {
-        cb.addEventListener('change', () => {
-            if (cb.checked) blindPrizes.add(cb.value);
-            else blindPrizes.delete(cb.value);
-            // Re-render tabs so the "???" pool tab appears/disappears immediately
-            renderTabs();
-            updateInfoBar();
-            saveCacheDebounced();
-        });
-    });
-}
-
-function getBlindPoolTotal() {
-    return [...blindPrizes].reduce((sum, p) => sum + (prizeInventory[p] || 0), 0);
-}
-
-function pickBlindPrize() {
-    const available = [...blindPrizes].filter(p => (prizeInventory[p] || 0) > 0);
-    if (!available.length) return null;
-    // Equal probability per prize type (not weighted by quantity)
-    return available[Math.floor(Math.random() * available.length)];
 }
 
 function renderTabs() {
@@ -1397,38 +1268,20 @@ function renderTabs() {
         return;
     }
 
-    // All prizes: real name always shown; blind prizes get a small 🎰 badge
     entries.forEach(([name, qty]) => {
-        const soldout  = qty <= 0;
-        const active   = name === selectedPrize;
-        const isBlind  = blindPrizes.has(name);
+        const soldout = qty <= 0;
+        const active  = name === selectedPrize;
         const tab = document.createElement('button');
         tab.type = 'button';
-        tab.className = 'prize-tab' + (soldout ? ' soldout' : '') + (active ? ' active' : '') + (isBlind ? ' blind-tagged' : '');
+        tab.className = 'prize-tab' + (soldout ? ' soldout' : '') + (active ? ' active' : '');
+        if (soldout) tab.disabled = true;
         tab.setAttribute('aria-pressed', active ? 'true' : 'false');
-        tab.setAttribute('aria-label', `${name}${isBlind ? '（已納入盲盒）' : ''}，${soldout ? '已抽完' : `剩餘 ${qty} 個`}`);
-        const badge = isBlind ? '<span class="blind-badge">🎰</span>' : '';
-        tab.innerHTML = `<span class="t-name">${esc(name)}${badge}</span>
+        tab.setAttribute('aria-label', `${name}，${soldout ? '已抽完' : `剩餘 ${qty} 個`}`);
+        tab.innerHTML = `<span class="t-name">${esc(name)}</span>
                          <span class="t-qty">${soldout ? '已抽完' : `剩 ${qty} 個`}</span>`;
         if (!soldout) tab.addEventListener('click', () => selectPrize(name));
         board.appendChild(tab);
     });
-
-    // Extra combined blind pool tab (equal-probability random draw)
-    if (blindPrizes.size > 0) {
-        const blindTotal = getBlindPoolTotal();
-        const soldout = blindTotal <= 0;
-        const active  = selectedPrize === BLIND_KEY;
-        const tab = document.createElement('button');
-        tab.type = 'button';
-        tab.className = 'prize-tab blind-pool-tab' + (soldout ? ' soldout' : '') + (active ? ' active' : '');
-        tab.setAttribute('aria-pressed', active ? 'true' : 'false');
-        tab.setAttribute('aria-label', `隨機盲盒，${soldout ? '已抽完' : `剩餘 ${blindTotal} 個`}`);
-        tab.innerHTML = `<span class="t-name">???</span>
-                         <span class="t-qty">${soldout ? '已抽完' : `剩 ${blindTotal} 個`}</span>`;
-        if (!soldout) tab.addEventListener('click', () => selectPrize(BLIND_KEY));
-        board.appendChild(tab);
-    }
 }
 
 function selectPrize(name) {
@@ -1439,14 +1292,9 @@ function selectPrize(name) {
 }
 
 function updateInfoBar() {
-    if (selectedPrize === BLIND_KEY) {
-        document.getElementById('infoName').textContent = '🎰 ???';
-        document.getElementById('infoQty').textContent = getBlindPoolTotal() + ' 個';
-    } else {
-        const has = selectedPrize && prizeInventory[selectedPrize] !== undefined;
-        document.getElementById('infoName').textContent = has ? selectedPrize : '—';
-        document.getElementById('infoQty').textContent = has ? prizeInventory[selectedPrize] + ' 個' : '—';
-    }
+    const has = selectedPrize && Object.hasOwn(prizeInventory, selectedPrize);
+    document.getElementById('infoName').textContent = has ? selectedPrize : '—';
+    document.getElementById('infoQty').textContent = has ? prizeInventory[selectedPrize] + ' 個' : '—';
 }
 
 // ─── History ─────────────────────────────────────────────────
@@ -1485,36 +1333,10 @@ function renderHistory() {
     document.getElementById('historyCount').textContent = historyData.length;
 }
 
-function renderLog() {
-    const list = document.getElementById('logList');
-    const empty = document.getElementById('logEmpty');
-    list.innerHTML = '';
-
-    opLog.forEach(item => {
-        const li = document.createElement('li');
-        li.className = 'log-item';
-        const timeText = typeof item.ts === 'number'
-            ? new Date(item.ts).toLocaleTimeString('zh-TW', { hour12: false })
-            : '—';
-        li.innerHTML = `
-            <span class="log-time">${esc(timeText)}</span>
-            <span class="log-prize">${esc(item.prize || '—')}</span>
-            <span class="log-winner">${esc(item.winner || '')}</span>
-        `;
-        list.appendChild(li);
-    });
-
-    empty.style.display = opLog.length ? 'none' : 'block';
-}
-
 function pushHistory(prize, winner) {
-    const entry = blindPrizes.has(prize)
-        ? { prize: '???', realPrize: prize, winner, ts: Date.now() }
-        : { prize, winner, ts: Date.now() };
+    const entry = { prize, winner, ts: Date.now() };
     historyData.unshift(entry);
-    opLog.unshift(entry);
     renderHistory();
-    renderLog();
     return entry;
 }
 
@@ -1523,7 +1345,8 @@ function exportHistory() {
         showToast('尚無中獎紀錄');
         return;
     }
-    const csv = '獎項,中獎者\n' + historyData.map(r => `"${r.realPrize || r.prize}","${r.winner}"`).join('\n');
+    function csvCell(v) { return '"' + String(v).replace(/"/g, '""') + '"'; }
+    const csv = '獎項,中獎者\n' + historyData.map(r => `${csvCell(r.realPrize || r.prize)},${csvCell(r.winner)}`).join('\n');
     const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -1538,7 +1361,7 @@ function startDraw() {
     if (isDrawing) return;
 
     const names = [...new Set(getNames())];
-    const qty = selectedPrize === BLIND_KEY ? getBlindPoolTotal() : (prizeInventory[selectedPrize] || 0);
+    const qty = prizeInventory[selectedPrize] || 0;
 
     if (!names.length) {
         showToast('名單是空的！');
@@ -1562,14 +1385,95 @@ function startDraw() {
     }
 
     setDrawingState(true);
-    runBatchDraw(batchCount);
+    if (quickMode && batchCount > 1) {
+        runQuickBatchDraw(batchCount);
+    } else {
+        runBatchDraw(batchCount);
+    }
+}
+
+// ─── Quick Batch Draw (shows all winners at once) ─────────────
+function runQuickBatchDraw(count) {
+    saveSnapshot();
+
+    let pool = [...new Set(getNames())];
+    const prize = selectedPrize;
+    const winners = [];
+
+    for (let i = 0; i < count; i++) {
+        if (!pool.length) break;
+        const idx = Math.floor(Math.random() * pool.length);
+        winners.push(pool[idx]);
+        if (autoRemove) pool.splice(idx, 1);
+    }
+
+    // Update names textarea
+    if (autoRemove) {
+        const ta = document.getElementById('namesInput');
+        ta.value = pool.join('\n');
+        updateNameCount(ta.value);
+    }
+
+    // Update prize inventory
+    prizeInventory[prize] -= winners.length;
+    syncPrizeRowQty(prize);
+    if (prizeInventory[prize] <= 0) selectedPrize = '';
+    syncPrizeTabs();
+
+    const ts = Date.now();
+    winners.forEach(w => historyData.unshift({ prize, winner: w, ts }));
+    renderHistory();
+    clearTimeout(saveCacheTimer);
+    saveCache();
+    checkAllDone();
+
+    showMultipleWinners(winners, prize);
+    setDrawingState(false);
+    resetStageTimer = setTimeout(resetStage, 5000);
+}
+
+function showMultipleWinners(winners, prize) {
+    const wd    = document.getElementById('winnerDisplay');
+    const txt   = document.getElementById('winnerNameText');
+    const extra = document.getElementById('winnerPrizeReveal');
+
+    document.getElementById('slotReady').style.display = 'none';
+    document.getElementById('slotStrip').style.display = 'none';
+    wd.querySelectorAll('.sword-slash').forEach(el => el.remove());
+    document.getElementById('particles').innerHTML = '';
+    extra.innerHTML = '';
+
+    wd.style.display = 'flex';
+
+    if (winners.length === 1) {
+        txt.style.animation = 'none';
+        txt.classList.remove('decoy');
+        txt.textContent = winners[0];
+        void txt.offsetHeight;
+        txt.style.animation = '';
+        extra.innerHTML = prize
+            ? `<div class="winner-label" style="font-size:15px;letter-spacing:4px">🎁 ${esc(prize)}</div>`
+            : '';
+    } else {
+        txt.style.animation = 'none';
+        txt.textContent = '';
+        extra.innerHTML = `
+            <div class="winner-label" style="font-size:15px;letter-spacing:4px">🎁 ${esc(prize)} &times; ${winners.length} 人</div>
+            <div class="multi-winner-grid">
+                ${winners.map((w, i) =>
+                    `<div class="multi-winner-item" style="animation-delay:${(i * 0.08).toFixed(2)}s">${esc(w)}</div>`
+                ).join('')}
+            </div>`;
+    }
+
+    spawnParticles();
 }
 
 // allowSpecial=false on re-draws triggered by fake decree to prevent infinite loop
 function runBatchDraw(remaining, allowSpecial = true) {
     if (remaining === 0) {
         setDrawingState(false);
-        setTimeout(resetStage, 2500);
+        resetStageTimer = setTimeout(resetStage, 5000);
         return;
     }
 
@@ -1579,9 +1483,7 @@ function runBatchDraw(remaining, allowSpecial = true) {
         showToast('名單是空的！');
         return;
     }
-    const poolOk = selectedPrize === BLIND_KEY
-        ? getBlindPoolTotal() > 0
-        : (selectedPrize && prizeInventory[selectedPrize] > 0);
+    const poolOk = selectedPrize && prizeInventory[selectedPrize] > 0;
     if (!poolOk) {
         setDrawingState(false);
         showToast('此獎項已全數抽完！');
@@ -1590,21 +1492,28 @@ function runBatchDraw(remaining, allowSpecial = true) {
 
     const winnerIdx = Math.floor(Math.random() * names.length);
     const winner = names[winnerIdx];
-    // Special effects: mutually exclusive. fakeDecree = 100% for testing.
+    // Special effects controlled by pendingSpecialEvent (set via Ctrl+K).
     // allowSpecial is false after a fake-decree re-draw to prevent infinite loop.
-    const fakeDecree = allowSpecial && Math.random() < 1.0;
-    const intercept  = !fakeDecree && allowSpecial && names.length >= 2 && Math.random() < 0.2;
-    const decoyIdx = intercept ? (winnerIdx === 0 ? 1 : 0) : -1;
+    const specialEvent = allowSpecial ? pendingSpecialEvent : null;
+    if (allowSpecial) pendingSpecialEvent = null;
+    const fakeDecree = specialEvent === 'fakeDecree';
+    const intercept  = specialEvent === 'intercept' && names.length >= 2;
+    const decoyIdx = intercept
+        ? (() => {
+            const others = names.map((_, i) => i).filter(i => i !== winnerIdx);
+            return others[Math.floor(Math.random() * others.length)];
+          })()
+        : -1;
     const decoy = intercept ? names[decoyIdx] : null;
 
     runSlotMachine(names, winner, decoy, () => {
         if (fakeDecree) {
-            showDecreeThenRedraw(winner, winnerIdx, () => {
+            showDecreeThenRedraw(winner, () => {
                 runBatchDraw(remaining, false); // disable special effects for this re-draw
             });
         } else {
             finalizeWinner(names, winnerIdx, winner, decoy, () => {
-                setTimeout(() => runBatchDraw(remaining - 1), 1000);
+                setTimeout(() => runBatchDraw(remaining - 1), quickMode ? 500 : 2000);
             });
         }
     });
@@ -1621,6 +1530,11 @@ function shuffle(arr) {
 }
 
 function runSlotMachine(names, winner, decoy, onComplete) {
+    if (quickMode) {
+        onComplete();
+        return;
+    }
+
     const ITEM_H = 72;
     const MACHINE_H = 360;
     const CENTER_Y = MACHINE_H / 2 - ITEM_H / 2;
@@ -1719,7 +1633,7 @@ function runSlotMachine(names, winner, decoy, onComplete) {
     requestAnimationFrame(step);
 }
 
-function showDecreeThenRedraw(winner, winnerIdx, onRedraw) {
+function showDecreeThenRedraw(winner, onRedraw) {
     // Display winner fully — as if they actually won
     const wd  = document.getElementById('winnerDisplay');
     const txt = document.getElementById('winnerNameText');
@@ -1747,34 +1661,31 @@ function showDecreeThenRedraw(winner, winnerIdx, onRedraw) {
 
     // ── Pretend it was a real win: add to history, remove name, decrement prize ──
     // Temporary history entry (not saved to localStorage)
-    const tempPrize = selectedPrize === BLIND_KEY ? '???' : (selectedPrize || '—');
+    const tempPrize = selectedPrize || '—';
     const tempEntry = { prize: tempPrize, winner, ts: Date.now(), _fakeDecree: true };
     historyData.unshift(tempEntry);
-    opLog.unshift(tempEntry);
     renderHistory();
-    renderLog();
 
     const allNames = getNames();
     let removedName = null;
     if (autoRemove) {
-        allNames.splice(winnerIdx, 1);
+        // Use indexOf(winner) so the correct entry is removed even if the textarea
+        // still has duplicates during the dedup debounce window.
+        const rawIdx = allNames.indexOf(winner);
+        if (rawIdx !== -1) allNames.splice(rawIdx, 1);
         removedName = winner;
         ta.value = allNames.join('\n');
         updateNameCount(ta.value);
     }
 
-    // Decrement prize display (non-blind only; blind prize not yet resolved)
+    // Decrement prize display temporarily
     // Save selectedPrize now — syncPrizeTabs() clears it when count hits 0
     const savedSelectedPrize = selectedPrize;
     let decrementedPrize = null;
-    if (selectedPrize && selectedPrize !== BLIND_KEY && prizeInventory[selectedPrize] > 0) {
+    if (selectedPrize && prizeInventory[selectedPrize] > 0) {
         decrementedPrize = selectedPrize;
         prizeInventory[decrementedPrize]--;
-        document.querySelectorAll('.prize-row').forEach(row => {
-            if (row.querySelector('.pr-name').value.trim() === decrementedPrize) {
-                row.querySelector('.pr-qty').value = prizeInventory[decrementedPrize];
-            }
-        });
+        syncPrizeRowQty(decrementedPrize);
         syncPrizeTabs(); // may clear selectedPrize if count→0; that's fine visually
     }
 
@@ -1803,10 +1714,7 @@ function showDecreeThenRedraw(winner, winnerIdx, onRedraw) {
                 // Restore history entry
                 const hIdx = historyData.indexOf(tempEntry);
                 if (hIdx !== -1) historyData.splice(hIdx, 1);
-                const lIdx = opLog.indexOf(tempEntry);
-                if (lIdx !== -1) opLog.splice(lIdx, 1);
                 renderHistory();
-                renderLog();
 
                 // Restore name
                 if (removedName !== null) {
@@ -1819,17 +1727,18 @@ function showDecreeThenRedraw(winner, winnerIdx, onRedraw) {
                 // Restore prize count
                 if (decrementedPrize !== null) {
                     prizeInventory[decrementedPrize]++;
-                    document.querySelectorAll('.prize-row').forEach(row => {
-                        if (row.querySelector('.pr-name').value.trim() === decrementedPrize) {
-                            row.querySelector('.pr-qty').value = prizeInventory[decrementedPrize];
-                        }
-                    });
+                    syncPrizeRowQty(decrementedPrize);
                     // Restore selectedPrize before syncPrizeTabs so it isn't cleared again
                     selectedPrize = savedSelectedPrize;
                     syncPrizeTabs();
                 }
 
-                resetStage();
+                // 清理殘留 DOM，但不顯示「靜候抽獎」
+                // (runSlotMachine / revealWinner 自行處理畫面轉換)
+                document.getElementById('slotStrip').style.display = 'none';
+                document.getElementById('winnerPrizeReveal').innerHTML = '';
+                document.getElementById('particles').innerHTML = '';
+                document.getElementById('winnerDisplay').querySelectorAll('.sword-slash').forEach(el => el.remove());
                 if (typeof onRedraw === 'function') onRedraw();
             }, 500);
         }, 1800);
@@ -1854,6 +1763,9 @@ function revealWinner(winner, decoy, prize, onRealShown) {
         txt.textContent = winner;
         void txt.offsetHeight;
         txt.style.animation = '';
+        extra.innerHTML = prize
+            ? `<div class="winner-label" style="font-size:15px;letter-spacing:4px">🎁 ${esc(prize)}</div>`
+            : '';
         spawnParticles();
         // Now safe to show history and save
         if (typeof onRealShown === 'function') onRealShown();
@@ -1884,85 +1796,37 @@ function revealWinner(winner, decoy, prize, onRealShown) {
     showRealWinner();
 }
 
-function renderBlindReveal(historyEntry, afterReveal) {
-    const extra = document.getElementById('winnerPrizeReveal');
-    extra.innerHTML = '';
-    const btn = document.createElement('button');
-    btn.className = 'blind-open-btn';
-    btn.textContent = '🎰 開啟盲盒！';
-    extra.appendChild(btn);
-    btn.addEventListener('click', () => showBlindSlot(historyEntry, extra, afterReveal), { once: true });
-}
+function finalizeWinner(names, winnerIdx, winner, decoy, onFinished) {
+    saveSnapshot();
 
-function showBlindSlot(historyEntry, container, afterReveal) {
-    const realPrize = historyEntry.realPrize;
-    const poolBase = Object.keys(prizeInventory);
-    const pool = poolBase.length >= 2 ? poolBase : [...poolBase, '神秘大獎', '限定好物', '幸運獎'];
+    const ta = document.getElementById('namesInput');
+    const prize = selectedPrize;
 
-    container.innerHTML = `
-        <div class="prize-slot-label">🎰 開箱中⋯</div>
-        <div class="prize-slot-wrap">
-            <div class="prize-slot-bar"></div>
-            <div class="prize-slot-strip" id="prizeSlotStrip"></div>
-        </div>
-    `;
-
-    const ITEM_H = 52;
-    const bGen = makeBlindGen(pool);
-    const count = 28 + Math.floor(Math.random() * 18);
-    const seq = [];
-    for (let i = 0; i < count; i++) seq.push(bGen(seq[seq.length - 1] || ''));
-    if (seq[seq.length - 1] === realPrize) seq.push(bGen(seq[seq.length - 1]));
-    const stopAt = seq.length;
-    seq.push(realPrize);
-
-    const strip = container.querySelector('#prizeSlotStrip');
-    strip.innerHTML = seq.map(n => `<div class="prize-slot-item">${esc(n)}</div>`).join('');
-    strip.style.transform = 'translateY(0)';
-
-    let idx = 0, speed = 28, lastTime = 0;
-    function step(ts) {
-        if (ts - lastTime < speed) { requestAnimationFrame(step); return; }
-        lastTime = ts;
-        strip.style.transform = `translateY(${-idx * ITEM_H}px)`;
-        if (idx >= stopAt) {
-            setTimeout(() => showBlindResult(container, realPrize, historyEntry, afterReveal), 400);
-            return;
-        }
-        idx++;
-        const progress = idx / stopAt;
-        speed = progress < 0.6 ? 28 : 28 + Math.pow((progress - 0.6) / 0.4, 2.6) * 480;
-        requestAnimationFrame(step);
+    if (autoRemove) {
+        names.splice(winnerIdx, 1);
+        ta.value = names.join('\n');
+        updateNameCount(ta.value);
     }
-    requestAnimationFrame(step);
+
+    prizeInventory[prize]--;
+    syncPrizeRowQty(prize);
+    if (prizeInventory[prize] <= 0) selectedPrize = '';
+    syncPrizeTabs();
+
+    revealWinner(winner, decoy, prize, () => {
+        pushHistory(prize, winner);
+        clearTimeout(saveCacheTimer);
+        saveCache();
+        checkAllDone();
+        if (typeof onFinished === 'function') onFinished();
+    });
 }
 
-function makeBlindGen(pool) {
-    if (pool.length === 1) return () => pool[0];
-    let cycle = shuffle([...pool]);
-    let pos = 0;
-    return function next(last) {
-        while (true) {
-            if (pos >= cycle.length) {
-                let tries = 0;
-                do { cycle = shuffle([...pool]); tries++; } while (cycle[0] === last && tries < 8);
-                pos = 0;
-            }
-            const c = cycle[pos++];
-            if (c !== last) return c;
-        }
-    };
-}
-
-function showBlindResult(container, realPrize, historyEntry, afterReveal) {
-    container.innerHTML = `<div class="prize-revealed-name">🎉 ${esc(realPrize)}</div>`;
-    historyEntry.prize = historyEntry.realPrize;
-    renderHistory();
-    renderLog();
-    saveCacheDebounced();
-    spawnParticles();
-    // afterReveal: syncPrizeTabs + checkAllDone + batch continuation
-    if (typeof afterReveal === 'function') afterReveal();
+function checkAllDone() {
+    if (Object.keys(prizeInventory).length === 0) return;
+    if (Object.values(prizeInventory).every(q => q <= 0)) {
+        showToast('🎉 恭喜！所有獎項已全數抽完！');
+    }
 }
 
 function spawnParticles() {
@@ -1987,90 +1851,11 @@ function spawnParticles() {
     }
 }
 
-function finalizeWinner(names, winnerIdx, winner, decoy, onFinished) {
-    saveSnapshot();
-
-    const ta = document.getElementById('namesInput');
-    const prizeSel = selectedPrize;
-    // For blind pool: randomly pick the actual prize NOW (true randomness, not pre-determined)
-    const prize = prizeSel === BLIND_KEY ? pickBlindPrize() : prizeSel;
-
-    if (!prize) {
-        setDrawingState(false);
-        showToast('盲盒獎項已全數抽完！');
-        return;
-    }
-
-    if (autoRemove) {
-        names.splice(winnerIdx, 1);
-        ta.value = names.join('\n');
-        updateNameCount(ta.value);
-    }
-
-    prizeInventory[prize]--;
-
-    const isBlindPrize = blindPrizes.has(prize);
-
-    if (!isBlindPrize) {
-        // Non-blind: update prize row and tabs immediately
-        document.querySelectorAll('.prize-row').forEach(row => {
-            if (row.querySelector('.pr-name').value.trim() === prize) {
-                row.querySelector('.pr-qty').value = prizeInventory[prize];
-            }
-        });
-        if (prizeSel === BLIND_KEY) {
-            if (getBlindPoolTotal() <= 0) selectedPrize = '';
-        } else {
-            if (prizeInventory[prize] <= 0) selectedPrize = '';
-        }
-        syncPrizeTabs();
-    } else {
-        // Blind: only update internal state; UI deferred until after box-open animation
-        if (prizeSel === BLIND_KEY) {
-            if (getBlindPoolTotal() <= 0) selectedPrize = '';
-        } else {
-            if (prizeInventory[prize] <= 0) selectedPrize = '';
-        }
-    }
-
-    // Push history and save ONLY after real winner is revealed (not during decoy phase)
-    revealWinner(winner, decoy, prize, () => {
-        const historyEntry = pushHistory(prize, winner);
-        clearTimeout(saveCacheTimer);
-        saveCache();
-
-        if (isBlindPrize) {
-            // Prize row, tabs, batch continuation — all happen AFTER box is opened
-            renderBlindReveal(historyEntry, () => {
-                document.querySelectorAll('.prize-row').forEach(row => {
-                    if (row.querySelector('.pr-name').value.trim() === prize) {
-                        row.querySelector('.pr-qty').value = prizeInventory[prize];
-                    }
-                });
-                syncPrizeTabs();
-                checkAllDone();
-                if (typeof onFinished === 'function') onFinished();
-            });
-        } else {
-            checkAllDone();
-            if (typeof onFinished === 'function') onFinished();
-        }
-    });
-}
-
-function checkAllDone() {
-    if (Object.keys(prizeInventory).length === 0) return;
-    if (Object.values(prizeInventory).every(q => q <= 0)) {
-        showToast('🎉 恭喜！所有獎項已全數抽完！');
-    }
-}
-
 // ─── Undo / Redo ──────────────────────────────────────────────
 function currentSnapshot() {
     return {
         names: document.getElementById('namesInput').value,
         prizeRows: collectPrizeRows(),
-        blindPrizes: [...blindPrizes],
         selectedPrize,
         historyData: JSON.parse(JSON.stringify(historyData))
     };
@@ -2084,6 +1869,7 @@ function saveSnapshot() {
 }
 
 function restoreSnapshot(snap) {
+    clearTimeout(syncTabsTimer);
     const ta = document.getElementById('namesInput');
     ta.value = snap.names;
     updateNameCount(ta.value);
@@ -2093,16 +1879,13 @@ function restoreSnapshot(snap) {
     (snap.prizeRows.length ? snap.prizeRows : [{ name: '', qty: 1 }]).forEach(row => {
         addPrizeRow(row.name, row.qty);
     });
-    blindPrizes = new Set(snap.blindPrizes || []);
 
     historyData = JSON.parse(JSON.stringify(snap.historyData || []));
-    opLog = historyData.slice();
     selectedPrize = snap.selectedPrize || '';
 
     resetStage();
     syncPrizeTabs();
     renderHistory();
-    renderLog();
     clearTimeout(saveCacheTimer);
     saveCache();
     updateUndoRedoBtns();
@@ -2137,7 +1920,12 @@ function setDrawingState(active) {
     isDrawing = active;
     document.getElementById('drawBtn').disabled = active;
     document.getElementById('batchInput').disabled = active;
-    if (active) lockPage(); else unlockPage();
+    if (active) {
+        clearTimeout(resetStageTimer);
+        lockPage();
+    } else {
+        unlockPage();
+    }
     updateUndoRedoBtns();
 }
 
@@ -2159,24 +1947,14 @@ function esc(str) {
     return String(str)
         .replace(/&/g, '&amp;')
         .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;')
         .replace(/</g, '&lt;')
         .replace(/>/g, '&gt;');
 }
 
 })();
 </script>
-<button class="log-trigger" id="logTrigger" title="操作紀錄">📋</button>
-<div class="log-overlay" id="logOverlay">
-  <div class="log-panel">
-    <div class="log-panel-header">
-      <span>📋 操作紀錄</span>
-      <button class="log-close" id="logClose">✕</button>
-    </div>
-    <ul class="log-list" id="logList"></ul>
-    <div class="log-empty" id="logEmpty">暫無紀錄</div>
-  </div>
-</div>
-<div class="toast" id="toast"></div>
+<div class="toast" id="toast" role="status" aria-live="polite" aria-atomic="true"></div>
 <div id="pageLock"></div>
 
 </body>
