@@ -1333,13 +1333,8 @@ function getBlindPoolTotal() {
 function pickBlindPrize() {
     const available = [...blindPrizes].filter(p => (prizeInventory[p] || 0) > 0);
     if (!available.length) return null;
-    const total = available.reduce((s, p) => s + prizeInventory[p], 0);
-    let r = Math.random() * total;
-    for (const p of available) {
-        r -= prizeInventory[p];
-        if (r <= 0) return p;
-    }
-    return available[available.length - 1];
+    // Equal probability per prize type (not weighted by quantity)
+    return available[Math.floor(Math.random() * available.length)];
 }
 
 function renderTabs() {
@@ -1351,33 +1346,34 @@ function renderTabs() {
         return;
     }
 
-    // Non-blind prizes: render individually
+    // All prizes: non-blind show real name, blind show "🎰 ????"
     entries.forEach(([name, qty]) => {
-        if (blindPrizes.has(name)) return;
-        const soldout = qty <= 0;
-        const active  = name === selectedPrize;
+        const soldout  = qty <= 0;
+        const active   = name === selectedPrize;
+        const isBlind  = blindPrizes.has(name);
+        const display  = isBlind ? '🎰 ???' : name;
         const tab = document.createElement('button');
         tab.type = 'button';
         tab.className = 'prize-tab' + (soldout ? ' soldout' : '') + (active ? ' active' : '');
         tab.setAttribute('aria-pressed', active ? 'true' : 'false');
-        tab.setAttribute('aria-label', `${name}，${soldout ? '已抽完' : `剩餘 ${qty} 個`}`);
-        tab.innerHTML = `<span class="t-name">${esc(name)}</span>
+        tab.setAttribute('aria-label', `${isBlind ? '盲盒獎項' : name}，${soldout ? '已抽完' : `剩餘 ${qty} 個`}`);
+        tab.innerHTML = `<span class="t-name">${esc(display)}</span>
                          <span class="t-qty">${soldout ? '已抽完' : `剩 ${qty} 個`}</span>`;
         if (!soldout) tab.addEventListener('click', () => selectPrize(name));
         board.appendChild(tab);
     });
 
-    // Blind prizes: one combined pool tab
+    // Extra combined blind pool tab (equal-probability random draw)
     if (blindPrizes.size > 0) {
         const blindTotal = getBlindPoolTotal();
         const soldout = blindTotal <= 0;
         const active  = selectedPrize === BLIND_KEY;
         const tab = document.createElement('button');
         tab.type = 'button';
-        tab.className = 'prize-tab' + (soldout ? ' soldout' : '') + (active ? ' active' : '');
+        tab.className = 'prize-tab blind-pool-tab' + (soldout ? ' soldout' : '') + (active ? ' active' : '');
         tab.setAttribute('aria-pressed', active ? 'true' : 'false');
-        tab.setAttribute('aria-label', `盲盒獎項，${soldout ? '已抽完' : `剩餘 ${blindTotal} 個`}`);
-        tab.innerHTML = `<span class="t-name">🎰 ???</span>
+        tab.setAttribute('aria-label', `隨機盲盒，${soldout ? '已抽完' : `剩餘 ${blindTotal} 個`}`);
+        tab.innerHTML = `<span class="t-name">🎲 盲盒</span>
                          <span class="t-qty">${soldout ? '已抽完' : `剩 ${blindTotal} 個`}</span>`;
         if (!soldout) tab.addEventListener('click', () => selectPrize(BLIND_KEY));
         board.appendChild(tab);
