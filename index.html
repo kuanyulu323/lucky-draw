@@ -140,19 +140,58 @@
         }
         .p-draw {
             flex: 1;
-            /* 讓背景圖透出，疊一層深色漸層保持可讀性 */
-            background:
-                linear-gradient(to bottom,
-                    rgba(7,8,13,.72) 0%,
-                    rgba(7,8,13,.52) 30%,
-                    rgba(7,8,13,.48) 65%,
-                    rgba(7,8,13,.75) 100%
-                );
+            background: var(--bg);
             align-items: center;
             justify-content: center;
-            padding: 24px 36px;
+            padding: 24px 0;
             gap: 18px;
             overflow-y: auto;
+        }
+
+        /* ── 老虎機＋旗幟舞台 ── */
+        @keyframes flagSway {
+            0%   { transform-origin: top center; transform: rotate(-0.8deg) translateY(0); }
+            50%  { transform-origin: top center; transform: rotate( 0.6deg) translateY(-4px); }
+            100% { transform-origin: top center; transform: rotate(-0.8deg) translateY(0); }
+        }
+        .slot-stage {
+            display: flex;
+            align-items: flex-start;
+            gap: 0;
+        }
+        /* 旗幟欄：直接用圖，深色背景自然融入 */
+        .flag-col {
+            width: 150px;
+            flex-shrink: 0;
+            align-self: flex-start;
+            overflow: hidden;
+            position: relative;
+        }
+        /* 靠近老虎機的內側邊緣漸淡 */
+        .flag-col-l::after {
+            content: '';
+            position: absolute;
+            inset: 0 0 0 auto;
+            width: 60%;
+            background: linear-gradient(to right, transparent, var(--bg));
+            pointer-events: none;
+        }
+        .flag-col-r::after {
+            content: '';
+            position: absolute;
+            inset: 0 auto 0 0;
+            width: 60%;
+            background: linear-gradient(to left, transparent, var(--bg));
+            pointer-events: none;
+        }
+        .flag-col img {
+            width: 100%;
+            display: block;
+            animation: flagSway 5.8s ease-in-out infinite;
+        }
+        .flag-col-r img {
+            transform: scaleX(-1);
+            animation-duration: 6.4s;
         }
         .p-history {
             width: 262px;
@@ -699,7 +738,14 @@
 
         <div class="prize-selector" id="prizeTabs"></div>
 
-        <div class="slot-wrap">
+        <div class="slot-stage">
+
+            <!-- 左旗幟 -->
+            <div class="flag-col flag-col-l">
+                <img src="flag.jpg" alt="">
+            </div>
+
+            <div class="slot-wrap">
             <!-- 三國角落扣飾 -->
             <span class="sc sc-tl"></span>
             <span class="sc sc-tr"></span>
@@ -721,6 +767,13 @@
             </div>
             </div>
         </div>
+
+            <!-- 右旗幟（鏡射） -->
+            <div class="flag-col flag-col-r">
+                <img src="flag.jpg" alt="">
+            </div>
+
+        </div><!-- /slot-stage -->
 
         <div class="draw-info">
             <span>名單剩餘：<b id="poolCount">0</b> 人</span>
