@@ -145,20 +145,40 @@
             gap: 18px;
             overflow-y: auto;
         }
-        /* 中央舞台左右戰旗 */
-        .banner {
-            position: absolute;
-            top: 0; bottom: 0;
-            width: 130px;
-            background: url('flag.png') no-repeat top center / contain;
-            pointer-events: none;
-            z-index: 0;
-            filter: drop-shadow(0 8px 24px rgba(212,42,58,.35));
+        /* ── 左右戰旗：固定懸掛於畫面左右側 ── */
+        @keyframes flagSway {
+            0%   { transform: rotate(-1.2deg) translateY(0px); }
+            40%  { transform: rotate( 0.6deg) translateY(-3px); }
+            70%  { transform: rotate(-0.8deg) translateY(1px); }
+            100% { transform: rotate(-1.2deg) translateY(0px); }
         }
-        .banner-l { left: 0; }
-        .banner-r { right: 0; transform: scaleX(-1); }
-        /* 確保抽獎內容在旗子上層 */
-        .p-draw > *:not(.banner) { position: relative; z-index: 1; }
+        @keyframes flagSwayR {
+            0%   { transform: scaleX(-1) rotate(-1.2deg) translateY(0px); }
+            40%  { transform: scaleX(-1) rotate( 0.6deg) translateY(-3px); }
+            70%  { transform: scaleX(-1) rotate(-0.8deg) translateY(1px); }
+            100% { transform: scaleX(-1) rotate(-1.2deg) translateY(0px); }
+        }
+        .banner {
+            position: fixed;
+            top: 48px;        /* 從 header 底部開始 */
+            width: 180px;
+            height: auto;
+            pointer-events: none;
+            z-index: 50;
+            transform-origin: top center;
+            filter:
+                drop-shadow(-6px 12px 20px rgba(0,0,0,.7))
+                drop-shadow( 0px  4px 12px rgba(155,26,42,.5));
+        }
+        .banner-l {
+            left: 12px;
+            animation: flagSway 5.5s ease-in-out infinite;
+        }
+        .banner-r {
+            right: 12px;
+            transform: scaleX(-1);
+            animation: flagSwayR 6.2s ease-in-out infinite;
+        }
         .p-history {
             width: 262px;
             flex-shrink: 0;
@@ -685,10 +705,6 @@
     <!-- ── Center: Draw Stage ── -->
     <main class="panel p-draw">
 
-        <!-- 左右戰旗 -->
-        <div class="banner banner-l"></div>
-        <div class="banner banner-r"></div>
-
         <div class="prize-selector" id="prizeTabs"></div>
 
         <div class="slot-wrap">
@@ -1107,6 +1123,10 @@ function esc(str) {
         .replace(/>/g,'&gt;');
 }
 </script>
+
+<!-- 左右戰旗：position:fixed，懸掛於畫面兩側，善用去背透明效果 -->
+<img src="flag.png" class="banner banner-l" alt="">
+<img src="flag.png" class="banner banner-r" alt="">
 
 </body>
 </html>
