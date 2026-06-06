@@ -613,6 +613,40 @@
             animation: swordSlash .5s ease-in forwards;
         }
 
+        /* ─── 假傳聖旨 Stamp ─── */
+        @keyframes stampSlam {
+            0%   { transform:translate(-50%,-50%) scale(3.5) rotate(-12deg); opacity:0; }
+            55%  { transform:translate(-50%,-50%) scale(0.88) rotate(-8deg); opacity:1; }
+            70%  { transform:translate(-50%,-50%) scale(1.04) rotate(-8deg); }
+            85%  { transform:translate(-50%,-50%) scale(0.97) rotate(-8deg); }
+            100% { transform:translate(-50%,-50%) scale(1) rotate(-8deg); opacity:1; }
+        }
+        @keyframes stampFade {
+            0%  { opacity:1; }
+            100%{ opacity:0; transform:translate(-50%,-50%) scale(1.15) rotate(-8deg); }
+        }
+        .fake-stamp {
+            position:absolute; top:50%; left:50%;
+            transform:translate(-50%,-50%) scale(1) rotate(-8deg);
+            width:164px; height:164px; border-radius:10px;
+            border:7px solid var(--crimson-lit);
+            box-shadow:0 0 35px rgba(212,42,58,.55), inset 0 0 25px rgba(212,42,58,.12);
+            display:flex; flex-direction:column; align-items:center; justify-content:center;
+            color:var(--crimson-lit); font-family:'Noto Serif TC',serif;
+            z-index:30; pointer-events:none;
+            animation:stampSlam .55s cubic-bezier(.17,.67,.35,1.25) forwards;
+        }
+        .fake-stamp-kanji {
+            font-size:52px; font-weight:900; letter-spacing:6px;
+            text-shadow:0 0 18px var(--crimson-lit);
+        }
+        .fake-stamp-sub {
+            font-size:11px; letter-spacing:3px; opacity:.75; margin-top:4px;
+        }
+        .fake-stamp.fading {
+            animation:stampFade .5s ease-in forwards;
+        }
+
         /* ─── Info Bar ─── */
         .draw-info {
             display: flex;
@@ -1545,14 +1579,23 @@ function runBatchDraw(remaining) {
 
     const winnerIdx = Math.floor(Math.random() * names.length);
     const winner = names[winnerIdx];
-    const intercept = names.length >= 2 && Math.random() < 0.2;
+    // Special effects: mutually exclusive. fakeDecree = 100% for testing.
+    const fakeDecree = Math.random() < 1.0;
+    const intercept  = !fakeDecree && names.length >= 2 && Math.random() < 0.2;
     const decoyIdx = intercept ? (winnerIdx === 0 ? 1 : 0) : -1;
     const decoy = intercept ? names[decoyIdx] : null;
 
     runSlotMachine(names, winner, decoy, () => {
-        finalizeWinner(names, winnerIdx, winner, decoy, () => {
-            setTimeout(() => runBatchDraw(remaining - 1), 1000);
-        });
+        if (fakeDecree) {
+            // Show winner fully (no finalizeWinner), then stamp and re-draw
+            showDecreeThenRedraw(winner, () => {
+                runBatchDraw(remaining); // re-draw same count; nothing was awarded
+            });
+        } else {
+            finalizeWinner(names, winnerIdx, winner, decoy, () => {
+                setTimeout(() => runBatchDraw(remaining - 1), 1000);
+            });
+        }
     });
 }
 
@@ -1663,6 +1706,49 @@ function runSlotMachine(names, winner, decoy, onComplete) {
     }
 
     requestAnimationFrame(step);
+}
+
+function showDecreeThenRedraw(winner, onRedraw) {
+    // Display winner fully — as if they actually won
+    const wd  = document.getElementById('winnerDisplay');
+    const txt = document.getElementById('winnerNameText');
+
+    document.getElementById('slotReady').style.display = 'none';
+    document.getElementById('slotStrip').style.display = 'none';
+    wd.querySelectorAll('.sword-slash').forEach(el => el.remove());
+    document.getElementById('particles').innerHTML = '';
+    document.getElementById('winnerPrizeReveal').innerHTML = '';
+    wd.style.display = 'flex';
+
+    txt.style.animation = 'none';
+    txt.classList.remove('decoy');
+    txt.textContent = winner;
+    void txt.offsetHeight;
+    txt.style.animation = '';
+    spawnParticles();
+
+    // 3~5 second pause — let chat celebrate
+    const pause = 3000 + Math.random() * 2000;
+    setTimeout(() => {
+        // Stamp slams in
+        const stamp = document.createElement('div');
+        stamp.className = 'fake-stamp';
+        stamp.innerHTML = `
+            <div class="fake-stamp-kanji">作廢</div>
+            <div class="fake-stamp-sub">重新抽選</div>
+        `;
+        wd.appendChild(stamp);
+
+        // After stamp settles, fade it out then reset and re-draw
+        setTimeout(() => {
+            stamp.classList.add('fading');
+            setTimeout(() => {
+                stamp.remove();
+                resetStage();
+                if (typeof onRedraw === 'function') onRedraw();
+            }, 500);
+        }, 1800);
+    }, pause);
 }
 
 function revealWinner(winner, decoy, prize, onRealShown) {
