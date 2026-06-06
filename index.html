@@ -1321,6 +1321,9 @@ function syncBlindConfig() {
         cb.addEventListener('change', () => {
             if (cb.checked) blindPrizes.add(cb.value);
             else blindPrizes.delete(cb.value);
+            // Re-render tabs so the "???" pool tab appears/disappears immediately
+            renderTabs();
+            updateInfoBar();
             saveCacheDebounced();
         });
     });
@@ -1373,7 +1376,7 @@ function renderTabs() {
         tab.className = 'prize-tab blind-pool-tab' + (soldout ? ' soldout' : '') + (active ? ' active' : '');
         tab.setAttribute('aria-pressed', active ? 'true' : 'false');
         tab.setAttribute('aria-label', `隨機盲盒，${soldout ? '已抽完' : `剩餘 ${blindTotal} 個`}`);
-        tab.innerHTML = `<span class="t-name">🎲 盲盒</span>
+        tab.innerHTML = `<span class="t-name">???</span>
                          <span class="t-qty">${soldout ? '已抽完' : `剩 ${blindTotal} 個`}</span>`;
         if (!soldout) tab.addEventListener('click', () => selectPrize(BLIND_KEY));
         board.appendChild(tab);
