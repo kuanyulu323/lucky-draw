@@ -1729,7 +1729,15 @@ function showDecreeThenRedraw(winner, winnerIdx, onRedraw) {
     txt.style.animation = '';
     spawnParticles();
 
-    // ── Pretend it was a real win: remove name + decrement prize ──
+    // ── Pretend it was a real win: add to history, remove name, decrement prize ──
+    // Temporary history entry (not saved to localStorage)
+    const tempPrize = selectedPrize === BLIND_KEY ? '???' : (selectedPrize || '—');
+    const tempEntry = { prize: tempPrize, winner, ts: Date.now(), _fakeDecree: true };
+    historyData.unshift(tempEntry);
+    opLog.unshift(tempEntry);
+    renderHistory();
+    renderLog();
+
     const allNames = getNames();
     let removedName = null;
     if (autoRemove) {
@@ -1769,6 +1777,14 @@ function showDecreeThenRedraw(winner, winnerIdx, onRedraw) {
             stamp.classList.add('fading');
             setTimeout(() => {
                 stamp.remove();
+
+                // Restore history entry
+                const hIdx = historyData.indexOf(tempEntry);
+                if (hIdx !== -1) historyData.splice(hIdx, 1);
+                const lIdx = opLog.indexOf(tempEntry);
+                if (lIdx !== -1) opLog.splice(lIdx, 1);
+                renderHistory();
+                renderLog();
 
                 // Restore name
                 if (removedName !== null) {
