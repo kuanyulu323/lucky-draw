@@ -27,7 +27,6 @@
             --border-hi:   #272f42;
             --wood:        #1a1508;
             --wood-border: #3e2e10;
-            --jade:        #1d6645;
         }
 
         html, body { height: 100%; overflow: hidden; }
@@ -278,6 +277,9 @@
             border-radius: 2px 2px 5px 5px;
             padding: 14px 20px;
             cursor: pointer;
+            font-family: inherit;
+            -webkit-appearance: none;
+            appearance: none;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -664,7 +666,39 @@
         ::-webkit-scrollbar-thumb { background: var(--border-hi); border-radius: 4px; }
         ::-webkit-scrollbar-thumb:hover { background: var(--gold); }
 
-        /* ─── Draw Controls ─── */
+        /* ─── Key Hint ─── */
+        .key-hint {
+            font-size: 11px;
+            color: var(--text-sub);
+            opacity: 0.55;
+            letter-spacing: 1px;
+        }
+
+        /* ─── Toast ─── */
+        .toast {
+            position: fixed;
+            bottom: 28px;
+            left: 50%;
+            transform: translateX(-50%) translateY(10px);
+            background: rgba(14,17,28,.96);
+            border: 1px solid rgba(201,151,58,.4);
+            color: var(--gold-light);
+            font-size: 13px;
+            padding: 10px 22px;
+            border-radius: 8px;
+            z-index: 9999;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity .3s, transform .3s;
+            max-width: 340px;
+            text-align: center;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+        }
+        .toast.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
         .draw-controls {
             display: flex;
             flex-direction: column;
@@ -738,18 +772,18 @@
     <aside class="panel p-settings">
 
         <div>
-            <div class="sec-lbl">👥 抽獎名單</div>
-            <textarea id="namesInput" placeholder="一人一行輸入名單..." oninput="onNameInput()"></textarea>
+            <label class="sec-lbl" for="namesInput">👥 抽獎名單</label>
+            <textarea id="namesInput" placeholder="一人一行輸入名單..."></textarea>
             <div class="name-count">名單人數：<b id="nameCount">0</b> 人</div>
         </div>
 
         <div>
             <div class="sec-lbl">🎁 獎項設定</div>
             <div id="prizeRows"></div>
-            <button class="btn-ghost" onclick="addPrize('', 1)">＋ 新增獎項</button>
+            <button class="btn-ghost">＋ 新增獎項</button>
         </div>
 
-        <button class="btn-danger" onclick="resetAll()">🗑 重設全系統</button>
+        <button class="btn-danger">🗑 重設全系統</button>
 
     </aside>
 
@@ -788,8 +822,9 @@
         </div>
 
         <div class="draw-controls">
-            <button class="draw-btn" id="drawBtn" onclick="startDraw()" aria-label="開始抽獎（Space 或 Enter）">開始抽獎</button>
-            <button class="undo-btn" id="undoBtn" onclick="undoLastDraw()" disabled title="復原上次抽獎（Ctrl+Z）">↩ 復原上次</button>
+            <button class="draw-btn" id="drawBtn" aria-label="開始抽獎（Space 或 Enter）">開始抽獎</button>
+            <button class="undo-btn" id="undoBtn" disabled title="復原上次抽獎（Ctrl+Z）">↩ 復原上次</button>
+            <div class="key-hint">Space / Enter 抽獎&nbsp;&nbsp;·&nbsp;&nbsp;Ctrl+Z 復原</div>
         </div>
 
     </main>
@@ -799,7 +834,7 @@
         <div class="history-header">
             <span>🏆 中獎名單</span>
             <div style="display:flex;align-items:center;gap:8px;">
-                <button class="btn-export" onclick="exportHistory()" title="匯出 CSV">⬇ 匯出</button>
+                <button class="btn-export" id="exportBtn" title="匯出 CSV">⬇ 匯出</button>
                 <span class="history-count" id="historyCount">0</span>
             </div>
         </div>
@@ -821,11 +856,33 @@ let selectedPrize  = "";
 let historyData    = [];
 let nameDebounce;
 let saveCacheTimer;
-let isDrawing      = false;
-let lastDraw       = null;   // for undo
+let toastTimer;
+let isDrawing = false;
+let lastDraw  = null;
 
 // ─── Init ────────────────────────────────────────────────────
-window.addEventListener('load', loadCache);
+window.addEventListener('load', init);
+
+function init() {
+    loadCache();
+
+    document.getElementById('namesInput').addEventListener('input', onNameInput);
+    document.querySelector('.btn-ghost').addEventListener('click', () => addPrize('', 1));
+    document.querySelector('.btn-danger').addEventListener('click', resetAll);
+    document.getElementById('drawBtn').addEventListener('click', startDraw);
+    document.getElementById('undoBtn').addEventListener('click', undoLastDraw);
+    document.getElementById('exportBtn').addEventListener('click', exportHistory);
+
+    // Event delegation for dynamically created prize rows
+    const prizeRowsEl = document.getElementById('prizeRows');
+    prizeRowsEl.addEventListener('input', e => {
+        if (e.target.matches('.pr-name, .pr-qty')) syncPrizeTabs();
+    });
+    prizeRowsEl.addEventListener('click', e => {
+        const delBtn = e.target.closest('.btn-del');
+        if (delBtn) removePrizeRow(delBtn);
+    });
+}
 
 document.addEventListener('keydown', e => {
     if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
@@ -877,6 +934,15 @@ function resetAll() {
     }
 }
 
+// ─── Toast ───────────────────────────────────────────────────
+function showToast(msg) {
+    const el = document.getElementById('toast');
+    el.textContent = msg;
+    el.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => el.classList.remove('show'), 2800);
+}
+
 // ─── Names ───────────────────────────────────────────────────
 function onNameInput() {
     clearTimeout(nameDebounce);
@@ -885,9 +951,10 @@ function onNameInput() {
 }
 
 function updateNameCount(raw) {
-    const n = raw.split('\n').map(s => s.trim()).filter(Boolean).length;
-    document.getElementById('nameCount').textContent = n;
-    document.getElementById('poolCount').textContent = n;
+    const lines  = raw.split('\n').map(s => s.trim()).filter(Boolean);
+    const unique = new Set(lines).size;
+    document.getElementById('nameCount').textContent = lines.length;
+    document.getElementById('poolCount').textContent = unique;
 }
 
 function deduplicateNames() {
@@ -900,7 +967,7 @@ function deduplicateNames() {
         seen.add(n);
         return true;
     });
-    if (dupes.length) alert(`偵測到重複名稱，已自動過濾：\n${dupes.join('、')}`);
+    if (dupes.length) showToast(`已自動過濾重複名稱：${dupes.join('、')}`);
     ta.value = unique.join('\n');
     updateNameCount(ta.value);
     saveCacheDebounced();
@@ -922,16 +989,16 @@ function addPrizeRow(name = "", qty = 1) {
     const row = document.createElement('div');
     row.className = 'prize-row';
     row.innerHTML = `
-        <input class="pr-name" type="text"   placeholder="獎項名稱" value="${esc(name)}" oninput="syncPrizeTabs()">
-        <input class="pr-qty"  type="number" placeholder="數量" min="0" value="${qty}"   oninput="syncPrizeTabs()">
-        <button class="btn-del" onclick="removePrizeRow(this)" title="移除">✕</button>
+        <input class="pr-name" type="text"   placeholder="獎項名稱" value="${esc(name)}" aria-label="獎項名稱">
+        <input class="pr-qty"  type="number" placeholder="數量" min="0" value="${qty}"   aria-label="獎項數量">
+        <button class="btn-del" type="button" title="移除" aria-label="移除此獎項">✕</button>
     `;
     container.appendChild(row);
 }
 
 function removePrizeRow(btn) {
     if (document.querySelectorAll('.prize-row').length <= 1) {
-        alert("請至少保留一個獎項！");
+        showToast("請至少保留一個獎項！");
         return;
     }
     btn.parentElement.remove();
@@ -950,7 +1017,7 @@ function collectPrizeRows() {
 
 // ─── Prize Tabs ──────────────────────────────────────────────
 function syncPrizeTabs() {
-    // Merge duplicate prize rows (silent)
+    // Merge duplicate prize rows (silent) and build inventory in a single DOM pass
     const seen = {};
     document.querySelectorAll('.prize-row').forEach(row => {
         const nameEl = row.querySelector('.pr-name');
@@ -963,7 +1030,10 @@ function syncPrizeTabs() {
     });
     Object.values(seen).forEach(({ qtyEl, total }) => { qtyEl.value = total; });
 
-    prizeInventory = buildInventory();
+    // Build inventory directly from seen (no second DOM query)
+    prizeInventory = Object.fromEntries(
+        Object.entries(seen).map(([n, { total }]) => [n, total])
+    );
 
     if (selectedPrize && (!prizeInventory[selectedPrize] || prizeInventory[selectedPrize] <= 0)) {
         selectedPrize = "";
@@ -972,16 +1042,6 @@ function syncPrizeTabs() {
     renderTabs();
     updateInfoBar();
     saveCacheDebounced();
-}
-
-function buildInventory() {
-    const inv = {};
-    document.querySelectorAll('.prize-row').forEach(row => {
-        const name = row.querySelector('.pr-name').value.trim();
-        const qty  = parseInt(row.querySelector('.pr-qty').value) || 0;
-        if (name) inv[name] = (inv[name] || 0) + qty;
-    });
-    return inv;
 }
 
 function renderTabs() {
@@ -1047,7 +1107,7 @@ function pushHistory(prize, winner) {
 }
 
 function exportHistory() {
-    if (!historyData.length) { alert('尚無中獎紀錄'); return; }
+    if (!historyData.length) { showToast('尚無中獎紀錄'); return; }
     const csv  = '獎項,中獎者\n' + historyData.map(r => `"${r.prize}","${r.winner}"`).join('\n');
     const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8' });
     const url  = URL.createObjectURL(blob);
@@ -1059,12 +1119,11 @@ function exportHistory() {
 // ─── Draw ────────────────────────────────────────────────────
 function startDraw() {
     if (isDrawing) return;
-    // Silent dedup with Set (no alert, no textarea rewrite at draw time)
     const names = [...new Set(getNames())];
-    if (!names.length)  { alert("名單是空的！"); return; }
-    if (!selectedPrize) { alert("請先選擇一個獎項！"); return; }
+    if (!names.length)  { showToast("名單是空的！"); return; }
+    if (!selectedPrize) { showToast("請先選擇一個獎項！"); return; }
     if (!prizeInventory[selectedPrize] || prizeInventory[selectedPrize] <= 0) {
-        alert("此獎項已全數抽完！"); return;
+        showToast("此獎項已全數抽完！"); return;
     }
 
     isDrawing = true;
@@ -1212,7 +1271,7 @@ function finalizeWinner(names, winnerIdx, winner) {
     const ta    = document.getElementById('namesInput');
     const prize = selectedPrize;
 
-    lastDraw = { winnerIdx, winner, prize }; // store for undo
+    lastDraw = { winnerIdx, winner, prize };
 
     names.splice(winnerIdx, 1);
     ta.value = names.join('\n');
@@ -1230,10 +1289,18 @@ function finalizeWinner(names, winnerIdx, winner) {
     pushHistory(prize, winner);
     syncPrizeTabs();
     saveCache();
+    checkAllDone();
 
     isDrawing = false;
     document.getElementById('drawBtn').disabled = false;
     document.getElementById('undoBtn').disabled = false;
+}
+
+function checkAllDone() {
+    if (Object.keys(prizeInventory).length === 0) return;
+    if (Object.values(prizeInventory).every(q => q <= 0)) {
+        showToast('🎉 恭喜！所有獎項已全數抽完！');
+    }
 }
 
 // ─── Undo ────────────────────────────────────────────────────
@@ -1242,7 +1309,6 @@ function undoLastDraw() {
     const { winnerIdx, winner, prize } = lastDraw;
     lastDraw = null;
 
-    // Restore winner at original position
     const ta      = document.getElementById('namesInput');
     const current = getNames();
     current.splice(winnerIdx, 0, winner);
@@ -1262,6 +1328,7 @@ function undoLastDraw() {
     saveCache();
 
     document.getElementById('undoBtn').disabled = true;
+    showToast('已復原上次抽獎');
 }
 
 // ─── Util ────────────────────────────────────────────────────
@@ -1273,14 +1340,9 @@ function esc(str) {
         .replace(/>/g,'&gt;');
 }
 
-// Expose functions needed by inline HTML event handlers
-Object.assign(window, {
-    onNameInput, addPrize, removePrizeRow, syncPrizeTabs,
-    startDraw, resetAll, exportHistory, undoLastDraw
-});
-
 })();
 </script>
+<div class="toast" id="toast"></div>
 
 </body>
 </html>
