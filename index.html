@@ -1713,17 +1713,17 @@ function revealWinner(winner, decoy, prize, onRealShown) {
     showRealWinner();
 }
 
-function renderBlindReveal(historyEntry) {
+function renderBlindReveal(historyEntry, afterReveal) {
     const extra = document.getElementById('winnerPrizeReveal');
     extra.innerHTML = '';
     const btn = document.createElement('button');
     btn.className = 'blind-open-btn';
     btn.textContent = '🎰 開啟盲盒！';
     extra.appendChild(btn);
-    btn.addEventListener('click', () => showBlindSlot(historyEntry, extra), { once: true });
+    btn.addEventListener('click', () => showBlindSlot(historyEntry, extra, afterReveal), { once: true });
 }
 
-function showBlindSlot(historyEntry, container) {
+function showBlindSlot(historyEntry, container, afterReveal) {
     const realPrize = historyEntry.realPrize;
     const poolBase = Object.keys(prizeInventory);
     const pool = poolBase.length >= 2 ? poolBase : [...poolBase, '神秘大獎', '限定好物', '幸運獎'];
@@ -1755,7 +1755,7 @@ function showBlindSlot(historyEntry, container) {
         lastTime = ts;
         strip.style.transform = `translateY(${-idx * ITEM_H}px)`;
         if (idx >= stopAt) {
-            setTimeout(() => showBlindResult(container, realPrize, historyEntry), 400);
+            setTimeout(() => showBlindResult(container, realPrize, historyEntry, afterReveal), 400);
             return;
         }
         idx++;
@@ -1783,13 +1783,15 @@ function makeBlindGen(pool) {
     };
 }
 
-function showBlindResult(container, realPrize, historyEntry) {
+function showBlindResult(container, realPrize, historyEntry, afterReveal) {
     container.innerHTML = `<div class="prize-revealed-name">🎉 ${esc(realPrize)}</div>`;
     historyEntry.prize = historyEntry.realPrize;
     renderHistory();
     renderLog();
     saveCacheDebounced();
     spawnParticles();
+    // afterReveal: syncPrizeTabs + checkAllDone + batch continuation
+    if (typeof afterReveal === 'function') afterReveal();
 }
 
 function spawnParticles() {
@@ -1841,23 +1843,38 @@ function finalizeWinner(names, winnerIdx, winner, decoy, onFinished) {
         }
     });
 
-    // Auto-clear selection when exhausted
+    // Auto-clear selection when exhausted (state only, UI refresh handled below)
     if (prizeSel === BLIND_KEY) {
         if (getBlindPoolTotal() <= 0) selectedPrize = '';
     } else {
         if (prizeInventory[prize] <= 0) selectedPrize = '';
     }
 
-    syncPrizeTabs();
+    const isBlindPrize = blindPrizes.has(prize);
+
+    if (!isBlindPrize) {
+        // Non-blind: update tabs immediately so audience sees count drop
+        syncPrizeTabs();
+    }
+    // Blind: delay syncPrizeTabs until after the box-open animation
 
     // Push history and save ONLY after real winner is revealed (not during decoy phase)
     revealWinner(winner, decoy, prize, () => {
         const historyEntry = pushHistory(prize, winner);
         clearTimeout(saveCacheTimer);
         saveCache();
-        checkAllDone();
-        if (blindPrizes.has(prize)) renderBlindReveal(historyEntry);
-        if (typeof onFinished === 'function') onFinished();
+
+        if (isBlindPrize) {
+            // Tabs update + batch continuation happen AFTER box is opened
+            renderBlindReveal(historyEntry, () => {
+                syncPrizeTabs();
+                checkAllDone();
+                if (typeof onFinished === 'function') onFinished();
+            });
+        } else {
+            checkAllDone();
+            if (typeof onFinished === 'function') onFinished();
+        }
     });
 }
 
