@@ -264,47 +264,30 @@
             50%{box-shadow:0 0 28px rgba(201,151,58,.65),0 0 60px rgba(201,151,58,.2);}
         }
 
-        /* ─── Blind Box Slot Overlay ─── */
-        .blind-overlay {
-            position:fixed; inset:0; background:rgba(0,0,0,.82);
-            z-index:2000; display:flex; align-items:center; justify-content:center;
-            backdrop-filter:blur(8px);
+        /* ─── Blind Box Inline Slot (inside #winnerPrizeReveal) ─── */
+        .prize-slot-label {
+            font-size:11px; color:var(--text-sub); letter-spacing:.05em; margin-bottom:6px;
         }
-        .blind-box {
-            background:#0b0d13; border:1px solid rgba(201,151,58,.4);
-            border-radius:16px; width:min(360px,90vw);
-            padding:28px 24px; text-align:center; position:relative;
+        .prize-slot-wrap {
+            height:52px; overflow:hidden; border:1px solid rgba(201,151,58,.3);
+            border-radius:6px; background:rgba(201,151,58,.04);
+            position:relative; width:min(220px,85%);
         }
-        .blind-box-title {
-            font-family:'Noto Serif TC',serif; font-size:14px;
-            color:var(--text-sub); margin-bottom:20px; letter-spacing:.05em;
-        }
-        .blind-slot-wrap {
-            height:72px; overflow:hidden; border:1px solid rgba(201,151,58,.3);
-            border-radius:8px; background:rgba(201,151,58,.04);
-            position:relative; margin-bottom:20px;
-        }
-        .blind-slot-bar {
-            position:absolute; top:50%; left:0; right:0; height:2px;
+        .prize-slot-bar {
+            position:absolute; top:50%; left:0; right:0; height:1px;
             background:linear-gradient(90deg,transparent,var(--gold),transparent);
-            transform:translateY(-50%); z-index:2; opacity:.55; pointer-events:none;
+            transform:translateY(-50%); z-index:2; opacity:.5; pointer-events:none;
         }
-        .blind-slot-strip { position:absolute; width:100%; will-change:transform; }
-        .blind-slot-item {
-            height:72px; display:flex; align-items:center; justify-content:center;
-            font-family:'Noto Serif TC',serif; font-size:18px; font-weight:700; color:var(--gold-light);
+        .prize-slot-strip { position:absolute; width:100%; will-change:transform; }
+        .prize-slot-item {
+            height:52px; display:flex; align-items:center; justify-content:center;
+            font-family:'Noto Serif TC',serif; font-size:16px; font-weight:700; color:var(--gold-light);
         }
-        .blind-result-name {
-            font-family:'Noto Serif TC',serif; font-size:30px; font-weight:900;
-            color:var(--gold-light); animation:winPop .5s ease-out; margin-bottom:16px;
-            text-shadow:0 0 30px var(--gold-light),0 0 70px var(--gold-glow);
+        .prize-revealed-name {
+            margin-top:8px; font-family:'Noto Serif TC',serif; font-size:20px; font-weight:700;
+            color:var(--gold-light); animation:winPop .5s ease-out;
+            text-shadow:0 0 22px var(--gold-light),0 0 55px var(--gold-glow);
         }
-        .blind-confirm-btn {
-            background:none; border:1px solid var(--border-hi);
-            color:var(--text-sub); font-family:inherit; font-size:13px;
-            padding:7px 22px; border-radius:6px; cursor:pointer; transition:all .2s;
-        }
-        .blind-confirm-btn:hover { color:var(--gold); border-color:rgba(201,151,58,.4); }
 
         .btn-ghost {
             background: transparent;
@@ -1348,14 +1331,16 @@ function renderTabs() {
         return;
     }
     entries.forEach(([name, qty]) => {
-        const soldout = qty <= 0;
-        const active  = name === selectedPrize;
+        const soldout    = qty <= 0;
+        const active     = name === selectedPrize;
+        const isBlind    = blindPrizes.has(name);
+        const displayName = isBlind ? '🎰 ???' : name;
         const tab = document.createElement('button');
         tab.type = 'button';
         tab.className = 'prize-tab' + (soldout ? ' soldout' : '') + (active ? ' active' : '');
         tab.setAttribute('aria-pressed', active ? 'true' : 'false');
-        tab.setAttribute('aria-label', `${name}，${soldout ? '已抽完' : `剩餘 ${qty} 個`}`);
-        tab.innerHTML = `<span class="t-name">${esc(name)}</span>
+        tab.setAttribute('aria-label', `${isBlind ? '盲盒獎項' : name}，${soldout ? '已抽完' : `剩餘 ${qty} 個`}`);
+        tab.innerHTML = `<span class="t-name">${esc(displayName)}</span>
                          <span class="t-qty">${soldout ? '已抽完' : `剩 ${qty} 個`}</span>`;
         if (!soldout) tab.addEventListener('click', () => selectPrize(name));
         board.appendChild(tab);
@@ -1371,7 +1356,8 @@ function selectPrize(name) {
 
 function updateInfoBar() {
     const has = selectedPrize && prizeInventory[selectedPrize] !== undefined;
-    document.getElementById('infoName').textContent = has ? selectedPrize : '—';
+    const displayName = has && blindPrizes.has(selectedPrize) ? '🎰 ???' : (has ? selectedPrize : '—');
+    document.getElementById('infoName').textContent = displayName;
     document.getElementById('infoQty').textContent = has ? prizeInventory[selectedPrize] + ' 個' : '—';
 }
 
@@ -1687,30 +1673,23 @@ function renderBlindReveal(historyEntry) {
     btn.className = 'blind-open-btn';
     btn.textContent = '🎰 開啟盲盒！';
     extra.appendChild(btn);
-    btn.addEventListener('click', () => showBlindSlot(historyEntry), { once: true });
+    btn.addEventListener('click', () => showBlindSlot(historyEntry, extra), { once: true });
 }
 
-function showBlindSlot(historyEntry) {
+function showBlindSlot(historyEntry, container) {
     const realPrize = historyEntry.realPrize;
-    // Build prize pool: use all prizes (at least 3 items for drama)
     const poolBase = Object.keys(prizeInventory);
-    const pool = poolBase.length >= 2 ? poolBase
-        : [...poolBase, ...(poolBase.length ? [] : ['神秘大獎', '限定好物', '幸運獎'])];
+    const pool = poolBase.length >= 2 ? poolBase : [...poolBase, '神秘大獎', '限定好物', '幸運獎'];
 
-    const overlay = document.createElement('div');
-    overlay.className = 'blind-overlay';
-    overlay.innerHTML = `
-        <div class="blind-box">
-            <div class="blind-box-title">🎁 開箱中⋯</div>
-            <div class="blind-slot-wrap">
-                <div class="blind-slot-bar"></div>
-                <div class="blind-slot-strip" id="blindSlotStrip"></div>
-            </div>
+    container.innerHTML = `
+        <div class="prize-slot-label">🎰 開箱中⋯</div>
+        <div class="prize-slot-wrap">
+            <div class="prize-slot-bar"></div>
+            <div class="prize-slot-strip" id="prizeSlotStrip"></div>
         </div>
     `;
-    document.body.appendChild(overlay);
 
-    const ITEM_H = 72;
+    const ITEM_H = 52;
     const bGen = makeBlindGen(pool);
     const count = 28 + Math.floor(Math.random() * 18);
     const seq = [];
@@ -1719,20 +1698,17 @@ function showBlindSlot(historyEntry) {
     const stopAt = seq.length;
     seq.push(realPrize);
 
-    const strip = overlay.querySelector('#blindSlotStrip');
-    strip.innerHTML = seq.map(n => `<div class="blind-slot-item">${esc(n)}</div>`).join('');
+    const strip = container.querySelector('#prizeSlotStrip');
+    strip.innerHTML = seq.map(n => `<div class="prize-slot-item">${esc(n)}</div>`).join('');
     strip.style.transform = 'translateY(0)';
 
-    let idx = 0;
-    let speed = 28;
-    let lastTime = 0;
-
+    let idx = 0, speed = 28, lastTime = 0;
     function step(ts) {
         if (ts - lastTime < speed) { requestAnimationFrame(step); return; }
         lastTime = ts;
         strip.style.transform = `translateY(${-idx * ITEM_H}px)`;
         if (idx >= stopAt) {
-            setTimeout(() => showBlindResult(overlay, realPrize, historyEntry), 420);
+            setTimeout(() => showBlindResult(container, realPrize, historyEntry), 400);
             return;
         }
         idx++;
@@ -1760,20 +1736,13 @@ function makeBlindGen(pool) {
     };
 }
 
-function showBlindResult(overlay, realPrize, historyEntry) {
-    const box = overlay.querySelector('.blind-box');
-    box.innerHTML = `
-        <div class="blind-box-title">🎉 恭喜獲得</div>
-        <div class="blind-result-name">${esc(realPrize)}</div>
-        <button class="blind-confirm-btn" type="button">收下了 ✓</button>
-    `;
+function showBlindResult(container, realPrize, historyEntry) {
+    container.innerHTML = `<div class="prize-revealed-name">🎉 ${esc(realPrize)}</div>`;
     historyEntry.prize = historyEntry.realPrize;
     renderHistory();
     renderLog();
     saveCacheDebounced();
     spawnParticles();
-    box.querySelector('.blind-confirm-btn').addEventListener('click', () => overlay.remove(), { once: true });
-    overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
 }
 
 function spawnParticles() {
