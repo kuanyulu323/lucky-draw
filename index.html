@@ -1451,41 +1451,45 @@ function runSlotMachine(names, winner, decoy, onComplete) {
     const CENTER_Y = MACHINE_H / 2 - ITEM_H / 2;
     const stopTarget = decoy || winner; // slot visually stops here; decoy if intercept
 
-    function fillNoDup(seq, cycle, count, cyclePos) {
-        if (names.length === 1) {
-            for (let i = 0; i < count; i++) seq.push(names[0]);
-            return cyclePos;
-        }
-        let i = cyclePos;
-        let filled = 0;
-        while (filled < count) {
-            const candidate = cycle[i % cycle.length];
-            i++;
-            if (candidate !== seq[seq.length - 1]) {
-                seq.push(candidate);
-                filled++;
+    // Generator: each cycle is independently re-shuffled so names don't
+    // repeat in a fixed pattern. Cycle boundaries are checked to avoid
+    // having the same name at the end of one cycle and start of the next.
+    function makeGen() {
+        if (names.length === 1) return () => names[0];
+        let cycle = shuffle([...names]);
+        let pos = 0;
+        return function next(last) {
+            while (true) {
+                if (pos >= cycle.length) {
+                    let attempts = 0;
+                    do { cycle = shuffle([...names]); attempts++; }
+                    while (cycle[0] === last && attempts < 8);
+                    pos = 0;
+                }
+                const c = cycle[pos++];
+                if (c !== last) return c;
             }
-        }
-        return i;
+        };
     }
 
-    const baseCycle = shuffle(names);
+    const gen = makeGen();
     const minItems = 55;
     const rounds = Math.max(4, Math.ceil(minItems / names.length));
     const seq = [];
-    let cyclePos = 0;
 
-    cyclePos = fillNoDup(seq, baseCycle, rounds * names.length, cyclePos);
+    const totalMain = rounds * names.length;
+    for (let i = 0; i < totalMain; i++) seq.push(gen(seq[seq.length - 1]));
 
-    if (names.length > 1 && seq.length > 0 && seq[seq.length - 1] === stopTarget) {
-        cyclePos = fillNoDup(seq, baseCycle, 1, cyclePos);
+    // Bridge: ensure item just before stopTarget is not identical
+    if (names.length > 1 && seq[seq.length - 1] === stopTarget) {
+        seq.push(gen(seq[seq.length - 1]));
     }
 
     const winnerAt = seq.length;
     seq.push(stopTarget); // stop visually on decoy (or real winner if no intercept)
 
     const tail = 4 + Math.floor(Math.random() * 5);
-    fillNoDup(seq, baseCycle, tail, cyclePos);
+    for (let i = 0; i < tail; i++) seq.push(gen(seq[seq.length - 1]));
 
     const strip = document.getElementById('slotStrip');
     strip.style.transition = '';
