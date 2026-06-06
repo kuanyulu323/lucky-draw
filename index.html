@@ -6,7 +6,8 @@
     <title>🌺 彼岸花抽獎系統</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=ZCOOL+XiaoWei&family=Noto+Serif+TC:wght@400;700;900&display=swap" rel="stylesheet">
+    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=ZCOOL+XiaoWei&family=Noto+Serif+TC:wght@400;700;900&display=swap" onload="this.rel='stylesheet'">
+    <noscript><link href="https://fonts.googleapis.com/css2?family=ZCOOL+XiaoWei&family=Noto+Serif+TC:wght@400;700;900&display=swap" rel="stylesheet"></noscript>
     <style>
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -25,7 +26,6 @@
             --text-sub:    #7a8290;
             --border:      #1c2130;
             --border-hi:   #272f42;
-            --wood:        #1a1508;
             --wood-border: #3e2e10;
         }
 
@@ -706,7 +706,6 @@
             gap: 10px;
         }
         .undo-btn {
-            font-family: 'Noto Serif TC', serif;
             background: transparent;
             color: var(--text-sub);
             border: 1px solid var(--border-hi);
@@ -765,6 +764,8 @@
         <div class="hdr-title">🌺 彼岸花抽獎系統</div>
     </div>
 </header>
+
+<noscript><style>.app{display:none}</style><p style="padding:40px;text-align:center;color:#e0d6c4;font-family:serif">此頁面需要啟用 JavaScript 才能運作。</p></noscript>
 
 <div class="app">
 
@@ -1062,18 +1063,14 @@ function renderTabs() {
         tab.setAttribute('aria-label', `${name}，${soldout ? '已抽完' : `剩餘 ${qty} 個`}`);
         tab.innerHTML = `<span class="t-name">${esc(name)}</span>
                          <span class="t-qty">${soldout ? '已抽完' : `剩 ${qty} 個`}</span>`;
-        if (!soldout) tab.onclick = () => selectPrize(name);
+        if (!soldout) tab.addEventListener('click', () => selectPrize(name));
         board.appendChild(tab);
     });
 }
 
 function selectPrize(name) {
     selectedPrize = name;
-    document.querySelectorAll('.prize-tab').forEach(tab => {
-        const active = tab.querySelector('.t-name').textContent === name;
-        tab.classList.toggle('active', active);
-        tab.setAttribute('aria-pressed', active ? 'true' : 'false');
-    });
+    renderTabs();
     updateInfoBar();
     saveCacheDebounced();
 }
@@ -1240,7 +1237,7 @@ function revealWinner(winner) {
     txt.style.animation = 'none';
     txt.textContent = winner;
     wd.style.display = 'flex';
-    txt.offsetHeight; // force reflow to restart animation
+    void txt.offsetHeight; // force reflow to restart animation
     txt.style.animation = '';
     spawnParticles();
 }
@@ -1262,8 +1259,8 @@ function spawnParticles() {
             --dy: ${(Math.sin(angle) * dist).toFixed(1)}px;
             animation-delay: ${(Math.random() * 0.15).toFixed(2)}s;
         `;
+        p.addEventListener('animationend', () => p.remove(), { once: true });
         container.appendChild(p);
-        setTimeout(() => p.remove(), 1100);
     }
 }
 
@@ -1288,6 +1285,7 @@ function finalizeWinner(names, winnerIdx, winner) {
 
     pushHistory(prize, winner);
     syncPrizeTabs();
+    clearTimeout(saveCacheTimer);
     saveCache();
     checkAllDone();
 
@@ -1325,6 +1323,7 @@ function undoLastDraw() {
     historyData.shift();
     renderHistory();
     syncPrizeTabs();
+    clearTimeout(saveCacheTimer);
     saveCache();
 
     document.getElementById('undoBtn').disabled = true;
