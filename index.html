@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🎉 歡迎來到簡易抽獎系統</title>
+    <title>🎉 進階隨機抽獎系統</title>
     <style>
         body {
             font-family: Arial, sans-serif;
             background-color: #f4f7f6;
             text-align: center;
-            padding: 50px;
+            padding: 30px;
         }
         .container {
             max-width: 500px;
@@ -21,7 +21,7 @@
         }
         textarea {
             width: 100%;
-            height: 150px;
+            height: 120px;
             padding: 10px;
             box-sizing: border-box;
             border: 1px solid #ccc;
@@ -38,55 +38,146 @@
             font-size: 18px;
             margin-top: 15px;
             width: 100%;
+            transition: 0.2s;
         }
         button:hover {
             background-color: #45a049;
         }
+        button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
         #result {
             margin-top: 25px;
-            font-size: 24px;
+            font-size: 28px;
             font-weight: bold;
             color: #e91e63;
+            min-height: 40px;
+        }
+        .history-box {
+            margin-top: 30px;
+            border-top: 2px dashed #eee;
+            padding-top: 20px;
+            text-align: left;
+        }
+        .history-title {
+            font-weight: bold;
+            color: #555;
+            margin-bottom: 10px;
+        }
+        .history-list {
+            color: #666;
+            padding-left: 20px;
+        }
+        .remains {
+            font-size: 14px;
+            color: #888;
+            margin-top: 5px;
+            text-align: right;
         }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h2>🎉 簡易隨機抽獎系統</h2>
-    <p style="color: #666;">請在下方輸入抽獎名單（一人一行）：</p>
+    <h2>🎉 進階隨機抽獎系統</h2>
+    <p style="color: #666; font-size: 14px;">請輸入抽獎名單（一人一行，抽過就不會再中）：</p>
     
-    <textarea id="namesPlaceholder" placeholder="例如：&#10;小明&#10;小華&#10;小白"></textarea>
+    <textarea id="namesPlaceholder" placeholder="小明&#10;小華&#10;小白&#10;小美" oninput="updateCount()"></textarea>
+    <div class="remains" id="remainsCount">目前名單人數：0 人</div>
     
-    <button onclick="drawLuckyOne()">✨ 開始抽獎 ✨</button>
+    <button id="drawBtn" onclick="startDrawAnimate()">✨ 開始抽獎 ✨</button>
     
-    <div id="result"></div>
+    <!-- 抽獎結果顯示區 -->
+    <div id="result">準備抽獎...</div>
+    
+    <!-- 歷史中獎紀錄區 -->
+    <div class="history-box">
+        <div class="history-title">🏆 中獎名單紀錄：</div>
+        <ol class="history-list" id="historyList"></ol>
+    </div>
 </div>
 
 <script>
-function drawLuckyOne() {
-    // 1. 取得輸入框裡面的文字
+// 全局變數，用來記錄剩下的名單與中獎次數
+let currentPool = [];
+let isInitialized = false;
+let drawCount = 0;
+
+// 即時更新目前輸入框有幾個人
+function updateCount() {
+    if (isInitialized) return; // 如果已經開始抽了，就不理會輸入框變更
     const text = document.getElementById('namesPlaceholder').value.trim();
+    const list = text.split('\n').map(n => n.trim()).filter(n => n !== "");
+    document.getElementById('remainsCount').innerText = `目前名單人數：${list.length} 人`;
+}
+
+// 邏輯核心：滾動動畫與抽獎
+function startDrawAnimate() {
+    const text = document.getElementById('namesPlaceholder').value.trim();
+    const drawBtn = document.getElementById('drawBtn');
     
-    if (text === "") {
-        alert("請先輸入抽獎名單喔！");
+    // 第一次點擊時，把輸入框的名單載入到記憶體中
+    if (!isInitialized) {
+        currentPool = text.split('\n').map(name => name.trim()).filter(name => name !== "");
+        if (currentPool.length === 0) {
+            alert("請先輸入抽獎名單喔！");
+            return;
+        }
+        isInitialized = true;
+        document.getElementById('namesPlaceholder').disabled = true; // 鎖定輸入框，防止抽到一半被改
+    }
+    
+    // 防呆：如果名單被抽乾了
+    if (currentPool.length === 0) {
+        alert("所有人都在中獎名單內囉！名單已空。");
         return;
     }
     
-    // 2. 用「換行」把名字切開，變成一個陣列（名單列表）
-    const nameList = text.split('\n').map(name => name.trim()).filter(name => name !== "");
+    // 鎖定按鈕，防止重複點擊導致動畫錯亂
+    drawBtn.disabled = true;
     
-    if (nameList.length === 0) {
-        alert("名單好像空空的，請重新輸入。");
-        return;
-    }
+    // === 邏輯 2：滾動動畫效果 ===
+    let counter = 0;
+    const interval = setInterval(() => {
+        // 動態隨機顯示名字，造成跑馬燈效果
+        const tempIndex = Math.floor(Math.random() * currentPool.length);
+        document.getElementById('result').innerText = `🎲 正在抽取... ${currentPool[tempIndex]}`;
+        counter++;
+        
+        // 跑 15 次（大約 1.5 秒）後停下來決選
+        if (counter > 15) {
+            clearInterval(interval);
+            finalizeWinner();
+        }
+    }, 100);
+}
+
+function finalizeWinner() {
+    const drawBtn = document.getElementById('drawBtn');
     
-    // 3. 隨機產生一個陣列索引號碼
-    const randomIndex = Math.floor(Math.random() * nameList.length);
-    const winner = nameList[randomIndex];
+    // 隨機選出最終中獎者
+    const winnerIndex = Math.floor(Math.random() * currentPool.length);
+    const winner = currentPool[winnerIndex];
     
-    // 4. 把中獎結果顯示在網頁上
-    document.getElementById('result').innerHTML = "恭喜中獎人：✨ " + winner + " ✨";
+    // === 邏輯 1：不重複抽獎（將中獎者從陣列中剔除） ===
+    currentPool.splice(winnerIndex, 1);
+    
+    // 顯示結果
+    document.getElementById('result').innerHTML = `🎉 恭喜中獎人：<span style="color:#e91e63">${winner}</span>`;
+    
+    // 更新剩餘人數提示
+    document.getElementById('remainsCount').innerText = `剩餘可抽人數：${currentPool.length} 人`;
+    
+    // === 邏輯 3：歷史中獎紀錄 ===
+    drawCount++;
+    const historyList = document.getElementById('historyList');
+    const li = document.createElement('li');
+    li.innerText = `第 ${drawCount} 位中獎者：${winner}`;
+    historyList.appendChild(li);
+    
+    // 解鎖按鈕
+    drawBtn.disabled = false;
 }
 </script>
 
