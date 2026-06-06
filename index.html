@@ -151,7 +151,7 @@
             justify-content: center;
             padding: 24px 36px;
             gap: 18px;
-            overflow-y: auto;
+            overflow: hidden;
         }
         .p-history {
             width: 262px;
@@ -205,6 +205,9 @@
         /* ─── Prize Rows ─── */
         #prizeRows { display: flex; flex-direction: column; gap: 7px; margin-bottom: 8px; }
         .prize-row { display: flex; gap: 6px; align-items: center; }
+        .setting-row { display:flex; flex-direction:column; gap:10px; }
+        .toggle-label { display:flex; align-items:center; gap:8px; font-size:13px; color:var(--text-sub); cursor:pointer; }
+        .toggle-label input[type=checkbox] { width:16px; height:16px; accent-color:var(--gold); cursor:pointer; }
         .prize-row input[type=text]   { flex: 3; }
         .prize-row input[type=number] { flex: 1; min-width: 52px; }
         .btn-del {
@@ -220,6 +223,12 @@
             flex-shrink: 0;
         }
         .btn-del:hover { color: var(--crimson-lit); border-color: rgba(212,42,58,.4); }
+        .btn-blind {
+            background:none; border:1px solid var(--border); color:var(--text-sub);
+            border-radius:6px; padding:5px 7px; font-size:13px; cursor:pointer; flex-shrink:0;
+            transition:all .2s;
+        }
+        .btn-blind.active { border-color:rgba(201,151,58,.5); color:var(--gold); background:rgba(201,151,58,.1); }
 
         .btn-ghost {
             background: transparent;
@@ -499,6 +508,33 @@
             animation: winPop .55s cubic-bezier(.175,.885,.32,1.275) both,
                        winGlow 2s ease-in-out .6s infinite;
         }
+        .winner-name-text.decoy {
+            color: var(--crimson-lit);
+            text-shadow: 0 0 30px var(--crimson-lit), 0 0 80px var(--crimson-glow);
+        }
+        #winnerPrizeReveal { min-height: 58px; }
+        .flip-reveal {
+            perspective:600px; margin-top:10px;
+        }
+        .flip-card {
+            width:180px; height:48px; position:relative;
+            transform-style:preserve-3d; transition:transform .7s;
+        }
+        .flip-card.flipped { transform:rotateY(180deg); }
+        .flip-front,.flip-back {
+            position:absolute; inset:0; border-radius:8px;
+            display:flex; align-items:center; justify-content:center;
+            backface-visibility:hidden; font-size:15px; font-weight:700;
+        }
+        .flip-front {
+            background:rgba(155,26,42,.3); border:1px solid rgba(212,42,58,.4);
+            color:var(--crimson-lit); cursor:pointer;
+        }
+        button.flip-front { width:100%; font-family:inherit; }
+        .flip-back {
+            background:rgba(201,151,58,.12); border:1px solid rgba(201,151,58,.4);
+            color:var(--gold-light); transform:rotateY(180deg);
+        }
         /* particle container */
         #winnerDisplay .particles {
             position: absolute;
@@ -524,6 +560,16 @@
         @keyframes winGlow {
             0%, 100% { text-shadow: 0 0 28px var(--gold-light), 0 0 70px var(--gold-glow); }
             50%       { text-shadow: 0 0 50px #fff, 0 0 90px var(--gold-light), 0 0 130px var(--gold-glow); }
+        }
+        @keyframes swordSlash {
+            0%   { left:-80px; opacity:1; }
+            100% { left:calc(100% + 80px); opacity:0; }
+        }
+        .sword-slash {
+            position:absolute; top:50%; left:-80px;
+            transform:translateY(-50%) rotate(-25deg);
+            font-size:64px; z-index:30; pointer-events:none;
+            animation: swordSlash .5s ease-in forwards;
         }
 
         /* ─── Info Bar ─── */
@@ -617,21 +663,19 @@
             font-weight: 700;
             letter-spacing: 0;
         }
-        .history-list {
-            list-style: none;
-            overflow-y: auto;
-            flex: 1;
+        .history-groups { overflow-y:auto; flex:1; }
+        .history-groups::-webkit-scrollbar { width: 4px; }
+        .history-groups::-webkit-scrollbar-thumb { background: var(--border-hi); border-radius: 4px; }
+        .history-group { margin-bottom:14px; }
+        .history-group-hdr {
+            display:flex; justify-content:space-between; align-items:center;
+            padding:6px 0; border-bottom:1px solid var(--border-hi);
+            margin-bottom:4px; gap: 10px;
         }
-        .history-list::-webkit-scrollbar { width: 4px; }
-        .history-list::-webkit-scrollbar-thumb { background: var(--border-hi); border-radius: 4px; }
+        .history-group-list { list-style:none; }
 
         .history-item {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 11px 2px;
-            border-bottom: 1px solid var(--border);
-            gap: 8px;
+            display:flex; align-items:center; gap:8px; padding:7px 2px; border-bottom:1px solid var(--border);
             animation: slideIn .3s ease;
         }
         @keyframes slideIn {
@@ -650,15 +694,8 @@
             flex-shrink: 0;
             letter-spacing: 1px;
         }
-        .hi-winner {
-            font-size: 15px;
-            font-weight: 700;
-            color: var(--text);
-            text-align: right;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-        }
+        .draw-seq { font-size:10px; color:var(--text-sub); min-width:18px; }
+        .hi-winner { font-size:14px; font-weight:700; color:var(--text); flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 
         /* ─── Global scrollbar ─── */
         ::-webkit-scrollbar { width: 5px; height: 5px; }
@@ -705,6 +742,16 @@
             align-items: center;
             gap: 10px;
         }
+        .batch-control {
+            display:flex; align-items:center; gap:8px;
+        }
+        .batch-control input[type=number] {
+            width:60px; text-align:center; padding:5px 6px;
+            background:var(--bg-inset); color:var(--text);
+            border:1px solid var(--border); border-radius:6px;
+            font-size:14px; font-family:inherit;
+        }
+        .batch-label { font-size:13px; color:var(--text-sub); }
         .undo-btn {
             background: transparent;
             color: var(--text-sub);
@@ -732,6 +779,46 @@
             transition: all .2s;
         }
         .btn-export:hover { color: var(--gold); border-color: rgba(201,151,58,.4); }
+        .log-trigger {
+            position:fixed; bottom:72px; right:20px;
+            background:rgba(14,17,28,.92); border:1px solid rgba(201,151,58,.35);
+            color:var(--gold); font-size:18px; width:40px; height:40px;
+            border-radius:50%; cursor:pointer; z-index:990;
+            display:flex; align-items:center; justify-content:center;
+            transition:all .2s;
+        }
+        .log-trigger:hover { background:rgba(201,151,58,.15); }
+        .log-overlay {
+            position:fixed; inset:0; background:rgba(0,0,0,.7);
+            z-index:1000; display:none; align-items:center; justify-content:center;
+            backdrop-filter:blur(4px);
+        }
+        .log-overlay.open { display:flex; }
+        .log-panel {
+            background:#0b0d13; border:1px solid rgba(201,151,58,.3);
+            border-radius:14px; width:min(480px,90vw); max-height:75vh;
+            display:flex; flex-direction:column; overflow:hidden;
+        }
+        .log-panel-header {
+            display:flex; justify-content:space-between; align-items:center;
+            padding:16px 20px; border-bottom:1px solid var(--border);
+            font-family:'Noto Serif TC',serif; font-size:14px; font-weight:700; color:var(--gold-light);
+        }
+        .log-close {
+            background:none; border:none; color:var(--text-sub); font-size:16px;
+            cursor:pointer; padding:4px 8px; border-radius:4px;
+        }
+        .log-close:hover { color:var(--crimson-lit); }
+        .log-list { list-style:none; overflow-y:auto; flex:1; padding:12px 0; }
+        .log-item {
+            display:grid; grid-template-columns:80px 1fr 1fr;
+            align-items:center; padding:9px 20px; border-bottom:1px solid var(--border);
+            font-size:13px; gap:8px;
+        }
+        .log-time { color:var(--text-sub); font-size:11px; font-variant-numeric:tabular-nums; }
+        .log-prize { color:var(--gold); font-size:11px; }
+        .log-winner { color:var(--text); font-weight:700; text-align:right; }
+        .log-empty { display:none; text-align:center; padding:40px; color:var(--text-sub); font-size:13px; }
 
         /* ─── RWD ─── */
         @media (max-width: 768px) {
@@ -753,7 +840,7 @@
                 overflow-y: visible;
                 height: auto;
             }
-            .history-list { max-height: 280px; }
+            .history-groups { max-height: 280px; }
         }
     </style>
 </head>
@@ -784,6 +871,14 @@
             <button class="btn-ghost">＋ 新增獎項</button>
         </div>
 
+        <div class="setting-row">
+            <span class="sec-lbl" style="margin-bottom:0">⚙️ 抽獎規則</span>
+            <label class="toggle-label">
+                <input type="checkbox" id="autoRemoveToggle" checked>
+                <span>抽中後自動剔除名單</span>
+            </label>
+        </div>
+
         <button class="btn-danger">🗑 重設全系統</button>
 
     </aside>
@@ -811,6 +906,7 @@
                     <div class="particles" id="particles"></div>
                     <div class="winner-label">🎉 恭喜中獎</div>
                     <div class="winner-name-text" id="winnerNameText"></div>
+                    <div id="winnerPrizeReveal"></div>
                 </div>
             </div>
             </div>
@@ -824,8 +920,16 @@
 
         <div class="draw-controls">
             <button class="draw-btn" id="drawBtn" aria-label="開始抽獎（Space 或 Enter）">開始抽獎</button>
-            <button class="undo-btn" id="undoBtn" disabled title="復原上次抽獎（Ctrl+Z）">↩ 復原上次</button>
-            <div class="key-hint">Space / Enter 抽獎&nbsp;&nbsp;·&nbsp;&nbsp;Ctrl+Z 復原</div>
+            <div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center;">
+                <button class="undo-btn" id="undoBtn" disabled title="復原上次抽獎（Ctrl+Z）">↩ 復原上次</button>
+                <button class="undo-btn" id="redoBtn" disabled title="重做（Ctrl+Y）">↪ 重做</button>
+            </div>
+            <div class="batch-control">
+                <span class="batch-label">批量</span>
+                <input type="number" id="batchInput" min="1" max="50" value="1" aria-label="批量抽獎人數">
+                <span class="batch-label">人</span>
+            </div>
+            <div class="key-hint">Space / Enter 抽獎&nbsp;&nbsp;·&nbsp;&nbsp;Ctrl+Z 復原&nbsp;&nbsp;·&nbsp;&nbsp;Ctrl+Y 重做</div>
         </div>
 
     </main>
@@ -839,7 +943,7 @@
                 <span class="history-count" id="historyCount">0</span>
             </div>
         </div>
-        <ul class="history-list" id="historyList"></ul>
+        <div class="history-groups" id="historyGroups"></div>
     </aside>
 
 </div>
@@ -849,17 +953,30 @@
 'use strict';
 
 // ─── Constants ───────────────────────────────────────────────
-const KEYS = { names: 'bh_names', prizes: 'bh_prizes', history: 'bh_history', selected: 'bh_selected' };
+const KEYS = {
+    names: 'bh_names',
+    prizes: 'bh_prizes',
+    history: 'bh_history',
+    selected: 'bh_selected',
+    autoRemove: 'bh_autoremove',
+    opLog: 'bh_oplog',
+    batch: 'bh_batch'
+};
 
 // ─── State ───────────────────────────────────────────────────
 let prizeInventory = {};
+let blindPrizes    = new Set();
 let selectedPrize  = "";
 let historyData    = [];
+let opLog          = [];
 let nameDebounce;
 let saveCacheTimer;
 let toastTimer;
-let isDrawing = false;
-let lastDraw  = null;
+let isDrawing      = false;
+let autoRemove     = true;
+let batchCount     = 1;
+let undoStack      = [];
+let redoStack      = [];
 
 // ─── Init ────────────────────────────────────────────────────
 window.addEventListener('load', init);
@@ -868,59 +985,123 @@ function init() {
     loadCache();
 
     document.getElementById('namesInput').addEventListener('input', onNameInput);
-    document.querySelector('.btn-ghost').addEventListener('click', () => addPrize('', 1));
+    document.querySelector('.btn-ghost').addEventListener('click', () => addPrize('', 1, false));
     document.querySelector('.btn-danger').addEventListener('click', resetAll);
     document.getElementById('drawBtn').addEventListener('click', startDraw);
     document.getElementById('undoBtn').addEventListener('click', undoLastDraw);
+    document.getElementById('redoBtn').addEventListener('click', redoLastDraw);
     document.getElementById('exportBtn').addEventListener('click', exportHistory);
+    document.getElementById('autoRemoveToggle').addEventListener('change', e => {
+        autoRemove = e.target.checked;
+        saveCacheDebounced();
+    });
+    document.getElementById('batchInput').addEventListener('input', e => {
+        batchCount = clamp(parseInt(e.target.value, 10) || 1, 1, 50);
+        e.target.value = batchCount;
+        saveCacheDebounced();
+    });
+    document.getElementById('logTrigger').addEventListener('click', openLog);
+    document.getElementById('logClose').addEventListener('click', closeLog);
+    document.getElementById('logOverlay').addEventListener('click', e => {
+        if (e.target.id === 'logOverlay') closeLog();
+    });
 
-    // Event delegation for dynamically created prize rows
     const prizeRowsEl = document.getElementById('prizeRows');
     prizeRowsEl.addEventListener('input', e => {
         if (e.target.matches('.pr-name, .pr-qty')) syncPrizeTabs();
     });
     prizeRowsEl.addEventListener('click', e => {
+        const blindBtn = e.target.closest('.btn-blind');
+        if (blindBtn) {
+            blindBtn.classList.toggle('active');
+            blindBtn.setAttribute('aria-pressed', blindBtn.classList.contains('active') ? 'true' : 'false');
+            syncPrizeTabs();
+            return;
+        }
         const delBtn = e.target.closest('.btn-del');
         if (delBtn) removePrizeRow(delBtn);
     });
+
+    updateUndoRedoBtns();
+    renderLog();
 }
 
 document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') closeLog();
     if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
     if ((e.key === ' ' || e.key === 'Enter') && !isDrawing) {
         e.preventDefault();
         startDraw();
     }
-    if ((e.key === 'z' || e.key === 'Z') && (e.ctrlKey || e.metaKey) && !isDrawing) {
+    if ((e.key === 'z' || e.key === 'Z') && (e.ctrlKey || e.metaKey) && !e.shiftKey && !isDrawing) {
         e.preventDefault();
         undoLastDraw();
+    }
+    if ((((e.key === 'y' || e.key === 'Y') && (e.ctrlKey || e.metaKey)) ||
+        ((e.key === 'z' || e.key === 'Z') && (e.ctrlKey || e.metaKey) && e.shiftKey)) && !isDrawing) {
+        e.preventDefault();
+        redoLastDraw();
     }
 });
 
 // ─── Cache ───────────────────────────────────────────────────
+function parseCacheJSON(key, fallback) {
+    try {
+        return JSON.parse(localStorage.getItem(key) || JSON.stringify(fallback));
+    } catch (_) {
+        return fallback;
+    }
+}
+
+function normalizeHistory(list) {
+    if (!Array.isArray(list)) return [];
+    return list
+        .filter(item => item && typeof item === 'object')
+        .map(item => ({
+            prize: item.prize || '—',
+            realPrize: item.realPrize || '',
+            winner: item.winner || '',
+            ts: typeof item.ts === 'number' ? item.ts : null
+        }));
+}
+
 function loadCache() {
-    const names   = localStorage.getItem(KEYS.names)   || "";
-    const prizes  = JSON.parse(localStorage.getItem(KEYS.prizes)  || '[]');
-    const history = JSON.parse(localStorage.getItem(KEYS.history) || '[]');
+    const names      = localStorage.getItem(KEYS.names) || "";
+    const prizes     = parseCacheJSON(KEYS.prizes, []);
+    const history    = normalizeHistory(parseCacheJSON(KEYS.history, []));
+    const savedLog   = normalizeHistory(parseCacheJSON(KEYS.opLog, []));
+    const savedBatch = parseInt(localStorage.getItem(KEYS.batch), 10);
+
     selectedPrize = localStorage.getItem(KEYS.selected) || "";
+    autoRemove = localStorage.getItem(KEYS.autoRemove) !== 'false';
+    batchCount = clamp(Number.isFinite(savedBatch) ? savedBatch : 1, 1, 50);
 
     document.getElementById('namesInput').value = names;
+    document.getElementById('autoRemoveToggle').checked = autoRemove;
+    document.getElementById('batchInput').value = batchCount;
     updateNameCount(names);
 
     const rows = document.getElementById('prizeRows');
     rows.innerHTML = "";
-    (prizes.length ? prizes : [{ name: "", qty: 1 }]).forEach(p => addPrizeRow(p.name, p.qty));
+    (prizes.length ? prizes : [{ name: "", qty: 1, blind: false }]).forEach(p => addPrizeRow(p.name, p.qty, !!p.blind));
 
     historyData = history;
+    opLog = (savedLog.length ? savedLog : historyData).slice();
     renderHistory();
+    renderLog();
     syncPrizeTabs();
+    resetStage();
 }
 
 function saveCache() {
-    localStorage.setItem(KEYS.names,    document.getElementById('namesInput').value);
+    opLog = historyData.slice();
+    localStorage.setItem(KEYS.names, document.getElementById('namesInput').value);
     localStorage.setItem(KEYS.selected, selectedPrize);
-    localStorage.setItem(KEYS.prizes,   JSON.stringify(collectPrizeRows()));
-    localStorage.setItem(KEYS.history,  JSON.stringify(historyData));
+    localStorage.setItem(KEYS.prizes, JSON.stringify(collectPrizeRows()));
+    localStorage.setItem(KEYS.history, JSON.stringify(historyData));
+    localStorage.setItem(KEYS.autoRemove, autoRemove ? 'true' : 'false');
+    localStorage.setItem(KEYS.opLog, JSON.stringify(opLog));
+    localStorage.setItem(KEYS.batch, String(batchCount));
 }
 
 function saveCacheDebounced() {
@@ -929,19 +1110,27 @@ function saveCacheDebounced() {
 }
 
 function resetAll() {
-    if (confirm("⚠️ 確定重設所有資料？此操作不可復原。")) {
+    if (confirm('⚠️ 確定重設所有資料？此操作不可復原。')) {
         Object.values(KEYS).forEach(k => localStorage.removeItem(k));
         location.reload();
     }
 }
 
-// ─── Toast ───────────────────────────────────────────────────
+// ─── Toast / Log ─────────────────────────────────────────────
 function showToast(msg) {
     const el = document.getElementById('toast');
     el.textContent = msg;
     el.classList.add('show');
     clearTimeout(toastTimer);
     toastTimer = setTimeout(() => el.classList.remove('show'), 2800);
+}
+
+function openLog() {
+    document.getElementById('logOverlay').classList.add('open');
+}
+
+function closeLog() {
+    document.getElementById('logOverlay').classList.remove('open');
 }
 
 // ─── Names ───────────────────────────────────────────────────
@@ -959,12 +1148,15 @@ function updateNameCount(raw) {
 }
 
 function deduplicateNames() {
-    const ta    = document.getElementById('namesInput');
-    const raw   = ta.value.split('\n').map(s => s.trim()).filter(Boolean);
-    const seen  = new Set();
-    const dupes = [];
+    const ta     = document.getElementById('namesInput');
+    const raw    = ta.value.split('\n').map(s => s.trim()).filter(Boolean);
+    const seen   = new Set();
+    const dupes  = [];
     const unique = raw.filter(n => {
-        if (seen.has(n)) { if (!dupes.includes(n)) dupes.push(n); return false; }
+        if (seen.has(n)) {
+            if (!dupes.includes(n)) dupes.push(n);
+            return false;
+        }
         seen.add(n);
         return true;
     });
@@ -980,18 +1172,19 @@ function getNames() {
 }
 
 // ─── Prize Rows (settings) ───────────────────────────────────
-function addPrize(name, qty) {
-    addPrizeRow(name, qty);
+function addPrize(name, qty, blind) {
+    addPrizeRow(name, qty, blind);
     syncPrizeTabs();
 }
 
-function addPrizeRow(name = "", qty = 1) {
+function addPrizeRow(name = '', qty = 1, blind = false) {
     const container = document.getElementById('prizeRows');
     const row = document.createElement('div');
     row.className = 'prize-row';
     row.innerHTML = `
-        <input class="pr-name" type="text"   placeholder="獎項名稱" value="${esc(name)}" aria-label="獎項名稱">
-        <input class="pr-qty"  type="number" placeholder="數量" min="0" value="${qty}"   aria-label="獎項數量">
+        <input class="pr-name" type="text" placeholder="獎項名稱" value="${esc(name)}" aria-label="獎項名稱">
+        <input class="pr-qty" type="number" placeholder="數量" min="0" value="${qty}" aria-label="獎項數量">
+        <button class="btn-blind ${blind ? 'active' : ''}" type="button" title="盲盒模式" aria-label="切換盲盒模式" aria-pressed="${blind}">🎁</button>
         <button class="btn-del" type="button" title="移除" aria-label="移除此獎項">✕</button>
     `;
     container.appendChild(row);
@@ -999,7 +1192,7 @@ function addPrizeRow(name = "", qty = 1) {
 
 function removePrizeRow(btn) {
     if (document.querySelectorAll('.prize-row').length <= 1) {
-        showToast("請至少保留一個獎項！");
+        showToast('請至少保留一個獎項！');
         return;
     }
     btn.parentElement.remove();
@@ -1009,35 +1202,48 @@ function removePrizeRow(btn) {
 function collectPrizeRows() {
     const arr = [];
     document.querySelectorAll('.prize-row').forEach(row => {
-        const name = row.querySelector('.pr-name').value.trim();
-        const qty  = parseInt(row.querySelector('.pr-qty').value) || 0;
-        if (name) arr.push({ name, qty });
+        const name  = row.querySelector('.pr-name').value.trim();
+        const qty   = parseInt(row.querySelector('.pr-qty').value, 10) || 0;
+        const blind = row.querySelector('.btn-blind').classList.contains('active');
+        if (name) arr.push({ name, qty, blind });
     });
     return arr;
 }
 
 // ─── Prize Tabs ──────────────────────────────────────────────
 function syncPrizeTabs() {
-    // Merge duplicate prize rows (silent) and build inventory in a single DOM pass
     const seen = {};
     document.querySelectorAll('.prize-row').forEach(row => {
-        const nameEl = row.querySelector('.pr-name');
-        const qtyEl  = row.querySelector('.pr-qty');
-        const name   = nameEl.value.trim();
-        const qty    = parseInt(qtyEl.value) || 0;
+        const nameEl   = row.querySelector('.pr-name');
+        const qtyEl    = row.querySelector('.pr-qty');
+        const blindBtn = row.querySelector('.btn-blind');
+        const name     = nameEl.value.trim();
+        const qty      = parseInt(qtyEl.value, 10) || 0;
+        const blind    = blindBtn.classList.contains('active');
         if (!name) return;
-        if (seen[name]) { seen[name].total += qty; row.remove(); }
-        else            { seen[name] = { qtyEl, total: qty }; }
+        if (seen[name]) {
+            seen[name].total += qty;
+            seen[name].blind = seen[name].blind || blind;
+            row.remove();
+        } else {
+            seen[name] = { qtyEl, blindBtn, total: qty, blind };
+        }
     });
-    Object.values(seen).forEach(({ qtyEl, total }) => { qtyEl.value = total; });
+    Object.values(seen).forEach(({ qtyEl, blindBtn, total, blind }) => {
+        qtyEl.value = total;
+        blindBtn.classList.toggle('active', blind);
+        blindBtn.setAttribute('aria-pressed', blind ? 'true' : 'false');
+    });
 
-    // Build inventory directly from seen (no second DOM query)
     prizeInventory = Object.fromEntries(
-        Object.entries(seen).map(([n, { total }]) => [n, total])
+        Object.entries(seen).map(([name, meta]) => [name, meta.total])
+    );
+    blindPrizes = new Set(
+        Object.entries(seen).filter(([, meta]) => meta.blind).map(([name]) => name)
     );
 
     if (selectedPrize && (!prizeInventory[selectedPrize] || prizeInventory[selectedPrize] <= 0)) {
-        selectedPrize = "";
+        selectedPrize = '';
     }
 
     renderTabs();
@@ -1078,59 +1284,155 @@ function selectPrize(name) {
 function updateInfoBar() {
     const has = selectedPrize && prizeInventory[selectedPrize] !== undefined;
     document.getElementById('infoName').textContent = has ? selectedPrize : '—';
-    document.getElementById('infoQty').textContent  = has ? prizeInventory[selectedPrize] + ' 個' : '—';
+    document.getElementById('infoQty').textContent = has ? prizeInventory[selectedPrize] + ' 個' : '—';
 }
 
 // ─── History ─────────────────────────────────────────────────
 function renderHistory() {
-    const list = document.getElementById('historyList');
-    list.innerHTML = '';
-    historyData.forEach(item => list.appendChild(makeHistoryLi(item)));
+    const groupsEl = document.getElementById('historyGroups');
+    groupsEl.innerHTML = '';
+
+    const grouped = new Map();
+    for (let i = historyData.length - 1; i >= 0; i--) {
+        const item = historyData[i];
+        const prizeName = item.prize || '—';
+        if (!grouped.has(prizeName)) grouped.set(prizeName, []);
+        grouped.get(prizeName).push(item.winner || '');
+    }
+
+    grouped.forEach((winners, prizeName) => {
+        const group = document.createElement('div');
+        group.className = 'history-group';
+        group.innerHTML = `
+            <div class="history-group-hdr">
+                <span class="hi-prize">${esc(prizeName)}</span>
+                <span class="history-count">${winners.length} 人</span>
+            </div>
+            <ul class="history-group-list"></ul>
+        `;
+        const list = group.querySelector('.history-group-list');
+        winners.forEach((winner, idx) => {
+            const li = document.createElement('li');
+            li.className = 'history-item';
+            li.innerHTML = `<span class="draw-seq">${idx + 1}.</span><span class="hi-winner">${esc(winner)}</span>`;
+            list.appendChild(li);
+        });
+        groupsEl.appendChild(group);
+    });
+
     document.getElementById('historyCount').textContent = historyData.length;
 }
 
-function makeHistoryLi({ prize, winner }) {
-    const li = document.createElement('li');
-    li.className = 'history-item';
-    li.innerHTML = `<span class="hi-prize">${esc(prize)}</span><span class="hi-winner">${esc(winner)}</span>`;
-    return li;
+function renderLog() {
+    const list = document.getElementById('logList');
+    const empty = document.getElementById('logEmpty');
+    list.innerHTML = '';
+
+    opLog.forEach(item => {
+        const li = document.createElement('li');
+        li.className = 'log-item';
+        const timeText = typeof item.ts === 'number'
+            ? new Date(item.ts).toLocaleTimeString('zh-TW', { hour12: false })
+            : '—';
+        li.innerHTML = `
+            <span class="log-time">${esc(timeText)}</span>
+            <span class="log-prize">${esc(item.prize || '—')}</span>
+            <span class="log-winner">${esc(item.winner || '')}</span>
+        `;
+        list.appendChild(li);
+    });
+
+    empty.style.display = opLog.length ? 'none' : 'block';
 }
 
 function pushHistory(prize, winner) {
-    historyData.unshift({ prize, winner });
-    const list = document.getElementById('historyList');
-    list.insertBefore(makeHistoryLi({ prize, winner }), list.firstChild);
-    document.getElementById('historyCount').textContent = historyData.length;
+    const entry = blindPrizes.has(prize)
+        ? { prize: '???', realPrize: prize, winner, ts: Date.now() }
+        : { prize, winner, ts: Date.now() };
+    historyData.unshift(entry);
+    opLog.unshift(entry);
+    renderHistory();
+    renderLog();
+    return entry;
 }
 
 function exportHistory() {
-    if (!historyData.length) { showToast('尚無中獎紀錄'); return; }
-    const csv  = '獎項,中獎者\n' + historyData.map(r => `"${r.prize}","${r.winner}"`).join('\n');
+    if (!historyData.length) {
+        showToast('尚無中獎紀錄');
+        return;
+    }
+    const csv = '獎項,中獎者\n' + historyData.map(r => `"${r.realPrize || r.prize}","${r.winner}"`).join('\n');
     const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8' });
-    const url  = URL.createObjectURL(blob);
-    const a    = document.createElement('a');
-    a.href = url; a.download = '中獎名單.csv'; a.click();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = '中獎名單.csv';
+    a.click();
     setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
 // ─── Draw ────────────────────────────────────────────────────
 function startDraw() {
     if (isDrawing) return;
+
     const names = [...new Set(getNames())];
-    if (!names.length)  { showToast("名單是空的！"); return; }
-    if (!selectedPrize) { showToast("請先選擇一個獎項！"); return; }
-    if (!prizeInventory[selectedPrize] || prizeInventory[selectedPrize] <= 0) {
-        showToast("此獎項已全數抽完！"); return;
+    const qty = prizeInventory[selectedPrize] || 0;
+
+    if (!names.length) {
+        showToast('名單是空的！');
+        return;
+    }
+    if (!selectedPrize) {
+        showToast('請先選擇一個獎項！');
+        return;
+    }
+    if (qty <= 0) {
+        showToast('此獎項已全數抽完！');
+        return;
+    }
+    if (qty < batchCount) {
+        showToast('此獎項剩餘名額不足！');
+        return;
+    }
+    if (autoRemove && names.length < batchCount) {
+        showToast('名單人數不足以進行批量抽獎！');
+        return;
     }
 
-    isDrawing = true;
-    document.getElementById('drawBtn').disabled = true;
-    document.getElementById('undoBtn').disabled = true;
+    setDrawingState(true);
+    runBatchDraw(batchCount);
+}
+
+function runBatchDraw(remaining) {
+    if (remaining === 0) {
+        setDrawingState(false);
+        showToast('已完成抽選');
+        return;
+    }
+
+    const names = [...new Set(getNames())];
+    if (!names.length) {
+        setDrawingState(false);
+        showToast('名單是空的！');
+        return;
+    }
+    if (!selectedPrize || !prizeInventory[selectedPrize] || prizeInventory[selectedPrize] <= 0) {
+        setDrawingState(false);
+        showToast('此獎項已全數抽完！');
+        return;
+    }
 
     const winnerIdx = Math.floor(Math.random() * names.length);
-    const winner    = names[winnerIdx];
+    const winner = names[winnerIdx];
+    const intercept = names.length >= 2 && Math.random() < 0.2;
+    const decoyIdx = intercept ? (winnerIdx === 0 ? 1 : 0) : -1;
+    const decoy = intercept ? names[decoyIdx] : null;
 
-    runSlotMachine(names, winner, () => finalizeWinner(names, winnerIdx, winner));
+    runSlotMachine(names, winner, decoy, () => {
+        finalizeWinner(names, winnerIdx, winner, decoy, () => {
+            setTimeout(() => runBatchDraw(remaining - 1), 1000);
+        });
+    });
 }
 
 // ─── Slot Machine ─────────────────────────────────────────────
@@ -1143,30 +1445,35 @@ function shuffle(arr) {
     return a;
 }
 
-function runSlotMachine(names, winner, onComplete) {
-    const ITEM_H    = 72;
+function runSlotMachine(names, winner, decoy, onComplete) {
+    const ITEM_H = 72;
     const MACHINE_H = 360;
-    const CENTER_Y  = MACHINE_H / 2 - ITEM_H / 2;
+    const CENTER_Y = MACHINE_H / 2 - ITEM_H / 2;
+    void decoy;
 
     function fillNoDup(seq, cycle, count, cyclePos) {
         if (names.length === 1) {
             for (let i = 0; i < count; i++) seq.push(names[0]);
             return cyclePos;
         }
-        let i = cyclePos, filled = 0;
+        let i = cyclePos;
+        let filled = 0;
         while (filled < count) {
             const candidate = cycle[i % cycle.length];
             i++;
-            if (candidate !== seq[seq.length - 1]) { seq.push(candidate); filled++; }
+            if (candidate !== seq[seq.length - 1]) {
+                seq.push(candidate);
+                filled++;
+            }
         }
         return i;
     }
 
     const baseCycle = shuffle(names);
-    const minItems  = 55;
-    const rounds    = Math.max(4, Math.ceil(minItems / names.length));
-    const seq       = [];
-    let cyclePos    = 0;
+    const minItems = 55;
+    const rounds = Math.max(4, Math.ceil(minItems / names.length));
+    const seq = [];
+    let cyclePos = 0;
 
     cyclePos = fillNoDup(seq, baseCycle, rounds * names.length, cyclePos);
 
@@ -1182,19 +1489,22 @@ function runSlotMachine(names, winner, onComplete) {
 
     const strip = document.getElementById('slotStrip');
     strip.style.transition = '';
-    strip.style.transform  = `translateY(${CENTER_Y}px)`;
+    strip.style.transform = `translateY(${CENTER_Y}px)`;
     strip.innerHTML = seq.map(n => `<div class="slot-item">${esc(n)}</div>`).join('');
 
-    document.getElementById('slotReady').style.display     = 'none';
+    document.getElementById('slotReady').style.display = 'none';
     document.getElementById('winnerDisplay').style.display = 'none';
     strip.style.display = 'block';
 
-    let idx      = 0;
-    let speed    = 38;
+    let idx = 0;
+    let speed = 38;
     let lastTime = 0;
 
     function step(timestamp) {
-        if (timestamp - lastTime < speed) { requestAnimationFrame(step); return; }
+        if (timestamp - lastTime < speed) {
+            requestAnimationFrame(step);
+            return;
+        }
         lastTime = timestamp;
         strip.style.transform = `translateY(${CENTER_Y - idx * ITEM_H}px)`;
 
@@ -1202,7 +1512,7 @@ function runSlotMachine(names, winner, onComplete) {
             const winY = CENTER_Y - winnerAt * ITEM_H;
             setTimeout(() => {
                 strip.style.transition = 'transform 0.13s ease-out';
-                strip.style.transform  = `translateY(${winY - 9}px)`;
+                strip.style.transform = `translateY(${winY - 9}px)`;
                 setTimeout(() => {
                     strip.style.transform = `translateY(${winY + 3}px)`;
                     setTimeout(() => {
@@ -1210,7 +1520,6 @@ function runSlotMachine(names, winner, onComplete) {
                         setTimeout(() => {
                             strip.style.transition = '';
                             strip.style.display = 'none';
-                            revealWinner(winner);
                             onComplete();
                         }, 280);
                     }, 130);
@@ -1231,26 +1540,87 @@ function runSlotMachine(names, winner, onComplete) {
     requestAnimationFrame(step);
 }
 
-function revealWinner(winner) {
-    const wd  = document.getElementById('winnerDisplay');
+function revealWinner(winner, decoy, historyEntry, onShown) {
+    const wd = document.getElementById('winnerDisplay');
     const txt = document.getElementById('winnerNameText');
-    txt.style.animation = 'none';
-    txt.textContent = winner;
+    const extra = document.getElementById('winnerPrizeReveal');
+
+    document.getElementById('slotReady').style.display = 'none';
+    document.getElementById('slotStrip').style.display = 'none';
+    wd.querySelectorAll('.sword-slash').forEach(el => el.remove());
+    document.getElementById('particles').innerHTML = '';
+    extra.innerHTML = '';
     wd.style.display = 'flex';
-    void txt.offsetHeight; // force reflow to restart animation
+
+    const showRealWinner = () => {
+        txt.style.animation = 'none';
+        txt.classList.remove('decoy');
+        txt.textContent = winner;
+        void txt.offsetHeight;
+        txt.style.animation = '';
+        spawnParticles();
+        if (historyEntry && historyEntry.realPrize && historyEntry.prize === '???') {
+            renderBlindReveal(historyEntry);
+        }
+        if (typeof onShown === 'function') onShown();
+    };
+
+    txt.style.animation = 'none';
+    txt.textContent = decoy || winner;
+    txt.classList.toggle('decoy', !!decoy);
+    void txt.offsetHeight;
     txt.style.animation = '';
-    spawnParticles();
+
+    if (decoy) {
+        setTimeout(() => {
+            const slash = document.createElement('div');
+            slash.className = 'sword-slash';
+            slash.textContent = '⚔';
+            wd.appendChild(slash);
+            setTimeout(() => {
+                slash.remove();
+                showRealWinner();
+            }, 500);
+        }, 1400);
+        return;
+    }
+
+    showRealWinner();
+}
+
+function renderBlindReveal(historyEntry) {
+    const extra = document.getElementById('winnerPrizeReveal');
+    extra.innerHTML = `
+        <div class="flip-reveal">
+            <div class="flip-card">
+                <button class="flip-front" type="button">翻牌揭曉</button>
+                <div class="flip-back">${esc(historyEntry.realPrize)}</div>
+            </div>
+        </div>
+    `;
+    const card = extra.querySelector('.flip-card');
+    const button = extra.querySelector('.flip-front');
+    button.addEventListener('click', () => {
+        if (card.classList.contains('flipped')) return;
+        card.classList.add('flipped');
+        setTimeout(() => {
+            historyEntry.prize = historyEntry.realPrize;
+            renderHistory();
+            renderLog();
+            saveCacheDebounced();
+        }, 700);
+    }, { once: true });
 }
 
 function spawnParticles() {
     const container = document.getElementById('particles');
     container.innerHTML = '';
-    const colors = ['#f0c060','#c9973a','#ffffff','#d42a3a','#ff99aa','#fff7cc'];
+    const colors = ['#f0c060', '#c9973a', '#ffffff', '#d42a3a', '#ff99aa', '#fff7cc'];
     for (let i = 0; i < 28; i++) {
-        const p     = document.createElement('div');
+        const p = document.createElement('div');
         p.className = 'particle';
         const angle = Math.random() * Math.PI * 2;
-        const dist  = 50 + Math.random() * 110;
+        const dist = 50 + Math.random() * 110;
         p.style.cssText = `
             background: ${colors[i % colors.length]};
             left: 50%; top: 50%;
@@ -1264,15 +1634,17 @@ function spawnParticles() {
     }
 }
 
-function finalizeWinner(names, winnerIdx, winner) {
-    const ta    = document.getElementById('namesInput');
+function finalizeWinner(names, winnerIdx, winner, decoy, onFinished) {
+    saveSnapshot();
+
+    const ta = document.getElementById('namesInput');
     const prize = selectedPrize;
 
-    lastDraw = { winnerIdx, winner, prize };
-
-    names.splice(winnerIdx, 1);
-    ta.value = names.join('\n');
-    updateNameCount(ta.value);
+    if (autoRemove) {
+        names.splice(winnerIdx, 1);
+        ta.value = names.join('\n');
+        updateNameCount(ta.value);
+    }
 
     prizeInventory[prize]--;
     document.querySelectorAll('.prize-row').forEach(row => {
@@ -1281,17 +1653,14 @@ function finalizeWinner(names, winnerIdx, winner) {
         }
     });
 
-    if (prizeInventory[prize] <= 0) selectedPrize = "";
+    if (prizeInventory[prize] <= 0) selectedPrize = '';
 
-    pushHistory(prize, winner);
+    const historyEntry = pushHistory(prize, winner);
     syncPrizeTabs();
     clearTimeout(saveCacheTimer);
     saveCache();
     checkAllDone();
-
-    isDrawing = false;
-    document.getElementById('drawBtn').disabled = false;
-    document.getElementById('undoBtn').disabled = false;
+    revealWinner(winner, decoy, historyEntry, onFinished);
 }
 
 function checkAllDone() {
@@ -1301,47 +1670,112 @@ function checkAllDone() {
     }
 }
 
-// ─── Undo ────────────────────────────────────────────────────
-function undoLastDraw() {
-    if (!lastDraw || isDrawing) return;
-    const { winnerIdx, winner, prize } = lastDraw;
-    lastDraw = null;
+// ─── Undo / Redo ──────────────────────────────────────────────
+function currentSnapshot() {
+    return {
+        names: document.getElementById('namesInput').value,
+        prizeRows: collectPrizeRows(),
+        selectedPrize,
+        historyData: JSON.parse(JSON.stringify(historyData))
+    };
+}
 
-    const ta      = document.getElementById('namesInput');
-    const current = getNames();
-    current.splice(winnerIdx, 0, winner);
-    ta.value = current.join('\n');
+function saveSnapshot() {
+    undoStack.push(currentSnapshot());
+    if (undoStack.length > 20) undoStack.shift();
+    redoStack = [];
+    updateUndoRedoBtns();
+}
+
+function restoreSnapshot(snap) {
+    const ta = document.getElementById('namesInput');
+    ta.value = snap.names;
     updateNameCount(ta.value);
 
-    prizeInventory[prize]++;
-    document.querySelectorAll('.prize-row').forEach(row => {
-        if (row.querySelector('.pr-name').value.trim() === prize) {
-            row.querySelector('.pr-qty').value = prizeInventory[prize];
-        }
+    const rows = document.getElementById('prizeRows');
+    rows.innerHTML = '';
+    (snap.prizeRows.length ? snap.prizeRows : [{ name: '', qty: 1, blind: false }]).forEach(row => {
+        addPrizeRow(row.name, row.qty, !!row.blind);
     });
 
-    historyData.shift();
-    renderHistory();
+    historyData = JSON.parse(JSON.stringify(snap.historyData || []));
+    opLog = historyData.slice();
+    selectedPrize = snap.selectedPrize || '';
+
+    resetStage();
     syncPrizeTabs();
+    renderHistory();
+    renderLog();
     clearTimeout(saveCacheTimer);
     saveCache();
+    updateUndoRedoBtns();
+}
 
-    document.getElementById('undoBtn').disabled = true;
-    showToast('已復原上次抽獎');
+function undoLastDraw() {
+    if (!undoStack.length || isDrawing) return;
+    redoStack.push(currentSnapshot());
+    if (redoStack.length > 20) redoStack.shift();
+    restoreSnapshot(undoStack.pop());
+    showToast('已復原');
+}
+
+function redoLastDraw() {
+    if (!redoStack.length || isDrawing) return;
+    undoStack.push(currentSnapshot());
+    if (undoStack.length > 20) undoStack.shift();
+    restoreSnapshot(redoStack.pop());
+    showToast('已重做');
+}
+
+function updateUndoRedoBtns() {
+    document.getElementById('undoBtn').disabled = isDrawing || undoStack.length === 0;
+    document.getElementById('redoBtn').disabled = isDrawing || redoStack.length === 0;
+}
+
+// ─── View State ───────────────────────────────────────────────
+function setDrawingState(active) {
+    isDrawing = active;
+    document.getElementById('drawBtn').disabled = active;
+    document.getElementById('batchInput').disabled = active;
+    updateUndoRedoBtns();
+}
+
+function resetStage() {
+    document.getElementById('slotReady').style.display = 'flex';
+    document.getElementById('slotStrip').style.display = 'none';
+    document.getElementById('winnerDisplay').style.display = 'none';
+    document.getElementById('winnerPrizeReveal').innerHTML = '';
+    document.getElementById('particles').innerHTML = '';
+    document.getElementById('winnerDisplay').querySelectorAll('.sword-slash').forEach(el => el.remove());
 }
 
 // ─── Util ────────────────────────────────────────────────────
+function clamp(num, min, max) {
+    return Math.min(max, Math.max(min, num));
+}
+
 function esc(str) {
     return String(str)
-        .replace(/&/g,'&amp;')
-        .replace(/"/g,'&quot;')
-        .replace(/</g,'&lt;')
-        .replace(/>/g,'&gt;');
+        .replace(/&/g, '&amp;')
+        .replace(/"/g, '&quot;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
 }
 
 })();
 </script>
-<div class="toast" id="toast"></div>
+<button class="log-trigger" id="logTrigger" title="操作紀錄">📋</button>
+<div class="log-overlay" id="logOverlay">
+  <div class="log-panel">
+    <div class="log-panel-header">
+      <span>📋 操作紀錄</span>
+      <button class="log-close" id="logClose">✕</button>
+    </div>
+    <ul class="log-list" id="logList"></ul>
+    <div class="log-empty" id="logEmpty">暫無紀錄</div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
 
 </body>
 </html>
