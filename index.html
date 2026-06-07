@@ -1759,9 +1759,10 @@ function syncPrizeTabs() {
         (!Object.hasOwn(prizeInventory, selectedPrize) || prizeInventory[selectedPrize] <= 0)) {
         selectedPrize = '';
     }
-    // Clear blind box prize selection if BB is no longer locked or pool is empty
+    // Clear blind box prize selection if BB is no longer locked, pool is empty, or only one prize type remains
     if (selectedPrize === BLIND_BOX_PRIZE_ID &&
-        (!blindBox.locked || buildBBWeightedPool().length === 0 || getBBRemainingDraws() === 0)) {
+        (!blindBox.locked || buildBBWeightedPool().length === 0 ||
+         getBBRemainingDraws() === 0 || getBBPrizeTypes().length <= 1)) {
         selectedPrize = '';
     }
 
@@ -1811,17 +1812,20 @@ function renderTabs() {
         const pool    = buildBBWeightedPool();
         const bbQty   = getBBRemainingDraws(); // actual remaining draw slots, not weighted pool size
         const soldout = bbQty <= 0 || pool.length === 0;
+        const onlyOne = !soldout && getBBPrizeTypes().length <= 1;
+        const invalid = soldout || onlyOne;
         const active  = selectedPrize === BLIND_BOX_PRIZE_ID;
         const tab = document.createElement('button');
         tab.type  = 'button';
-        tab.className = 'prize-tab bb-main-tab' + (soldout ? ' soldout' : '') + (active ? ' active' : '');
-        if (soldout) tab.disabled = true;
+        tab.className = 'prize-tab bb-main-tab' + (invalid ? ' soldout' : '') + (active ? ' active' : '');
+        if (invalid) tab.disabled = true;
+        if (onlyOne) tab.title = '盲盒僅剩一種獎項，無抽獎意義';
         tab.setAttribute('aria-pressed', active ? 'true' : 'false');
-        tab.setAttribute('aria-label', `神秘盲盒，${soldout ? '已抽完' : `剩 ${bbQty} 抽`}`);
+        tab.setAttribute('aria-label', `神秘盲盒，${soldout ? '已抽完' : onlyOne ? '獎項唯一' : `剩 ${bbQty} 抽`}`);
         tab.innerHTML = `
             <span class="t-name">???</span>
-            <span class="t-qty">${soldout ? '已抽完' : `盲盒 ${bbQty} 抽`}</span>`;
-        if (!soldout) tab.addEventListener('click', () => selectPrize(BLIND_BOX_PRIZE_ID));
+            <span class="t-qty">${soldout ? '已抽完' : onlyOne ? '獎項唯一' : `盲盒 ${bbQty} 抽`}</span>`;
+        if (!invalid) tab.addEventListener('click', () => selectPrize(BLIND_BOX_PRIZE_ID));
         board.appendChild(tab);
     }
 }
@@ -1844,7 +1848,7 @@ function selectPrize(name) {
 
 function updateInfoBar() {
     if (selectedPrize === BLIND_BOX_PRIZE_ID) {
-        document.getElementById('infoName').textContent = '神秘盲盒 ???';
+        document.getElementById('infoName').textContent = '???';
         document.getElementById('infoQty').textContent  = getBBRemainingDraws() + ' 抽';
         return;
     }
@@ -1949,6 +1953,7 @@ function startDraw() {
         if (bbPhase !== 'idle') return;
         const pool = buildBBWeightedPool();
         if (!pool.length || getBBRemainingDraws() === 0) { showToast('盲盒獎池已全數抽完！'); return; }
+        if (getBBPrizeTypes().length <= 1) { showToast('盲盒僅剩一種獎項，無需盲盒抽獎！'); return; }
         const names = [...new Set(getNames())];
         if (!names.length) { showToast('名單是空的！'); return; }
         startBBDraw();
@@ -2488,6 +2493,16 @@ function restoreSnapshot(snap) {
 
     historyData = JSON.parse(JSON.stringify(snap.historyData || []));
     selectedPrize = snap.selectedPrize || '';
+
+    // Restore batchInput disabled state for blind box selection
+    const batchEl = document.getElementById('batchInput');
+    if (selectedPrize === BLIND_BOX_PRIZE_ID) {
+        batchCount       = 1;
+        batchEl.value    = 1;
+        batchEl.disabled = true;
+    } else {
+        batchEl.disabled = false;
+    }
 
     resetStage();
     syncPrizeTabs();
@@ -3060,7 +3075,7 @@ function revealBBWinnerBrief(winner, onDone) {
     txt.textContent = winner;
     void txt.offsetHeight;
     txt.style.animation = '';
-    extra.innerHTML = `<div class="winner-label" style="font-size:15px;letter-spacing:4px">🎁 神秘盲盒 ???</div>`;
+    extra.innerHTML = `<div class="winner-label" style="font-size:15px;letter-spacing:4px">🎁 ???</div>`;
     spawnParticles();
 
     // Brief pause so audience sees the winner, then modal takes over
