@@ -2180,16 +2180,32 @@ function runSlotMachine(names, winner, decoy, onComplete) {
     const totalMain = rounds * names.length;
     for (let i = 0; i < totalMain; i++) seq.push(gen(seq[seq.length - 1]));
 
-    // Bridge: ensure item just before stopTarget is not identical
-    if (names.length > 1 && seq[seq.length - 1] === stopTarget) {
-        seq.push(gen(seq[seq.length - 1]));
+    // Bridge: ensure the last SAFE_GAP items before stopTarget are all different
+    // from stopTarget, so the visible window above center never shows the winner twice.
+    // SAFE_GAP = floor((MACHINE_H / ITEM_H - 1) / 2) = floor((360/72-1)/2) = 2
+    const SAFE_GAP = 2;
+    if (names.length > 1) {
+        let iters = 0;
+        while (seq.length >= SAFE_GAP &&
+               seq.slice(-SAFE_GAP).includes(stopTarget) &&
+               iters++ < 20) {
+            seq.push(gen(seq[seq.length - 1]));
+        }
     }
 
     const winnerAt = seq.length;
     seq.push(stopTarget); // stop visually on decoy (or real winner if no intercept)
 
+    // Tail items: first SAFE_GAP slots are still visible below center — keep them
+    // free of stopTarget so the winner name doesn't appear twice in the window.
     const tail = 4 + Math.floor(Math.random() * 5);
-    for (let i = 0; i < tail; i++) seq.push(gen(seq[seq.length - 1]));
+    for (let i = 0; i < tail; i++) {
+        let t = gen(seq[seq.length - 1]);
+        if (i < SAFE_GAP && names.length > 1 && t === stopTarget) {
+            t = gen(t); // one extra pick to avoid stopTarget in the visible area
+        }
+        seq.push(t);
+    }
 
     const strip = document.getElementById('slotStrip');
     strip.style.transition = '';
