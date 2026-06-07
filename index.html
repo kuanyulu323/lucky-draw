@@ -748,6 +748,7 @@
             cursor: not-allowed;
         }
         #pageLock.locked { display: block; }
+        #pageLock.awaiting-continue { cursor: pointer; } /* clickable while awaiting host */
 
         .toast {
             position: fixed;
@@ -1367,6 +1368,10 @@ function init() {
     document.getElementById('winnerDisplay').addEventListener('click', () => {
         if (awaitingContinue) manualContinue();
     });
+    // pageLock intercepts clicks during isDrawing; forward continue clicks through it
+    document.getElementById('pageLock').addEventListener('click', () => {
+        if (awaitingContinue) manualContinue();
+    });
 }
 
 document.addEventListener('keydown', e => {
@@ -1374,16 +1379,19 @@ document.addEventListener('keydown', e => {
         e.preventDefault();
         // ── Blind box decoupling: Ctrl+K is completely ignored during any BB phase ──
         if (bbPhase !== 'idle') return;
-        if (!isDrawing) {
+        // Allow queuing a special event while awaiting manual continue (host preps next trick)
+        if (!isDrawing || awaitingContinue) {
             pendingSpecialEvent = Math.random() < 0.5 ? 'fakeDecree' : 'intercept';
         }
         return;
     }
     if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
-    if ((e.key === ' ' || e.key === 'Enter') && !isDrawing) {
+    if (e.key === ' ' || e.key === 'Enter') {
         e.preventDefault();
+        // awaitingContinue check MUST come before !isDrawing — page may still be
+        // "drawing" for intermediate batch winners but host needs to advance manually.
         if (awaitingContinue) { manualContinue(); return; }
-        startDraw();
+        if (!isDrawing) startDraw();
     }
     if ((e.key === 'z' || e.key === 'Z') && (e.ctrlKey || e.metaKey) && !e.shiftKey && !isDrawing) {
         e.preventDefault();
@@ -1915,9 +1923,9 @@ function showMultipleWinners(winners, prize) {
 // allowSpecial=false on re-draws triggered by fake decree to prevent infinite loop
 function runBatchDraw(remaining, allowSpecial = true) {
     if (remaining === 0) {
+        // All draws done — unlock the stage. The LAST winner's hint already handled
+        // the final "awaiting continue", so just finalize state here.
         setDrawingState(false);
-        // Manual continue: host presses Space/Enter or clicks to dismiss
-        showContinueHint(() => {});
         return;
     }
 
@@ -2383,6 +2391,7 @@ function resetStage() {
     awaitingContinue = false;
     const hint = document.getElementById('continueHint');
     if (hint) hint.classList.remove('visible');
+    document.getElementById('pageLock').classList.remove('awaiting-continue');
     document.getElementById('slotReady').style.display = 'flex';
     document.getElementById('slotStrip').style.display = 'none';
     document.getElementById('winnerDisplay').style.display = 'none';
@@ -2391,13 +2400,15 @@ function resetStage() {
     document.getElementById('winnerDisplay').querySelectorAll('.sword-slash').forEach(el => el.remove());
 }
 
-// Called by Space/Enter or clicking the winner display — advances past the winner screen.
+// Called by Space/Enter or clicking anywhere (winner display or pageLock) — advances past winner screen.
 let _continueCallback = null;
 function showContinueHint(callback) {
     awaitingContinue  = true;
     _continueCallback = callback || null;
     const hint = document.getElementById('continueHint');
     if (hint) hint.classList.add('visible');
+    // Change pageLock cursor to pointer so host knows it's clickable
+    document.getElementById('pageLock').classList.add('awaiting-continue');
 }
 function manualContinue() {
     if (!awaitingContinue) return;
@@ -2406,6 +2417,7 @@ function manualContinue() {
     _continueCallback = null;
     const hint = document.getElementById('continueHint');
     if (hint) hint.classList.remove('visible');
+    document.getElementById('pageLock').classList.remove('awaiting-continue');
     resetStage();
     if (typeof cb === 'function') cb();
 }
