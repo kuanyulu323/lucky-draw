@@ -932,7 +932,23 @@
             color:var(--text-sub); line-height:1.7;
         }
         .bb-lock-icon { font-size:11px; color:var(--gold); letter-spacing:2px; margin-bottom:4px; display:block; }
+        /* Locked prize list — one item per row */
         .bb-locked-prize { color:var(--gold-light); font-weight:700; display:inline-block; font-size:12px; }
+        .bb-locked-prize-row {
+            display: grid;
+            grid-template-columns: 1fr auto auto;
+            gap: 6px; align-items: center;
+            padding: 3px 0;
+            border-bottom: 1px solid rgba(201,151,58,.07);
+            font-size: 12px;
+        }
+        .bb-locked-prize-row:last-child { border-bottom: none; }
+        .bb-locked-prize-name { color: var(--gold-light); font-weight: 700; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .bb-locked-prize-qty  { color: var(--text-sub); font-size: 11px; opacity: .6; white-space: nowrap; }
+        .bb-locked-prize-pct  { color: var(--gold); font-size: 11px; font-weight: 700; text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+        /* Soldout items in Section A config */
+        .bb-a-card.soldout { opacity: .38; }
+        .bb-a-card.soldout .bb-name-row input[type=checkbox] { cursor: not-allowed; }
         .bb-unlock-btn {
             background:transparent; color:var(--text-sub);
             border:1px dashed var(--border-hi); border-radius:6px;
@@ -2570,18 +2586,19 @@ function renderBBSection() {
 
     // ── Locked (config confirmed) ──
     if (blindBox.locked) {
-        const types = getBBPrizeTypes();
-        // Build weight map for percentage display
-        const weightMap = {};
+        // Build enriched item list with qty + weight for each available prize
+        const lockedItems = [];
         blindBox.checkedPrizes.forEach(name => {
-            if ((prizeInventory[name] || 0) > 0)
-                weightMap[name] = Math.max(1, Number((blindBox.checkedWeights || {})[name]) || 1);
+            const qty = prizeInventory[name] || 0;
+            if (qty <= 0) return;
+            lockedItems.push({ name, qty, w: Math.max(1, Number((blindBox.checkedWeights || {})[name]) || 1) });
         });
         blindBox.exclusives.forEach(ex => {
-            if (ex.name && (Number(ex.qty) || 0) > 0)
-                weightMap[ex.name] = Math.max(1, Number(ex.weight) || 1);
+            const qty = Number(ex.qty) || 0;
+            if (!ex.name || qty <= 0) return;
+            lockedItems.push({ name: ex.name, qty, w: Math.max(1, Number(ex.weight) || 1) });
         });
-        const totalW = Object.values(weightMap).reduce((s, w) => s + w, 0) || 1;
+        const totalW = lockedItems.reduce((s, it) => s + it.w, 0) || 1;
 
         section.innerHTML = `
             <div>
@@ -2592,12 +2609,16 @@ function renderBBSection() {
                 </label>
                 <div class="bb-locked-info">
                     <span class="bb-lock-icon">🔒 盲盒已鎖定</span>
-                    <div style="font-size:11px;color:var(--text-sub);margin-bottom:4px">獎品種類（共 ${types.length} 種，依權重抽取）：</div>
-                    ${types.map(t => {
-                        const w   = weightMap[t] || 1;
-                        const pct = Math.round(w / totalW * 100);
-                        return `<div class="bb-locked-prize">▸ ${esc(t)}&nbsp;<small style="opacity:.55;font-weight:400">${pct}%</small></div>`;
-                    }).join('') || '<div style="font-size:12px;color:var(--text-sub)">（獎池為空）</div>'}
+                    <div style="font-size:11px;color:var(--text-sub);margin-bottom:6px">獎品種類（共 ${lockedItems.length} 種，依權重抽取）：</div>
+                    ${lockedItems.length ? lockedItems.map(it => {
+                        const pct = (it.w / totalW * 100).toFixed(1);
+                        return `
+                        <div class="bb-locked-prize-row">
+                            <span class="bb-locked-prize-name">▸ ${esc(it.name)}</span>
+                            <span class="bb-locked-prize-qty">×${it.qty}</span>
+                            <span class="bb-locked-prize-pct">${pct}%</span>
+                        </div>`;
+                    }).join('') : '<div style="font-size:12px;color:var(--text-sub)">（獎池為空）</div>'}
                 </div>
                 <button class="bb-unlock-btn" id="bbUnlockBtn">🔓 解鎖重新設定</button>
             </div>`;
@@ -2620,24 +2641,28 @@ function renderBBSection() {
     const currentPrizes = Object.keys(prizeInventory);
     // Remove stale checkedPrizes (prizes that no longer exist)
     blindBox.checkedPrizes = blindBox.checkedPrizes.filter(n => currentPrizes.includes(n));
+    // Also remove soldout prizes from checkedPrizes (can't be checked anyway)
+    blindBox.checkedPrizes = blindBox.checkedPrizes.filter(n => (prizeInventory[n] || 0) > 0);
 
     // ── Section A cards (checked normal prizes) ──
     const checkedHTML = currentPrizes.length
         ? currentPrizes.map(name => {
-            const isChecked = blindBox.checkedPrizes.includes(name);
+            const qty       = prizeInventory[name] || 0;
+            const isSoldOut = qty <= 0;
+            const isChecked = !isSoldOut && blindBox.checkedPrizes.includes(name);
             const weight    = Math.max(1, Number((blindBox.checkedWeights || {})[name]) || 1);
             return `
-            <div class="bb-item-card bb-a-card${!isChecked ? ' inactive' : ''}" data-prize="${esc(name)}">
+            <div class="bb-item-card bb-a-card${!isChecked ? ' inactive' : ''}${isSoldOut ? ' soldout' : ''}" data-prize="${esc(name)}">
                 <div class="bb-name-row">
                     <input type="checkbox" class="bb-prize-check" data-prize="${esc(name)}"
-                        ${isChecked ? 'checked' : ''}>
-                    <span class="bb-name-text">${esc(name)}&nbsp;<small style="opacity:.5">×${prizeInventory[name]}</small></span>
+                        ${isChecked ? 'checked' : ''}${isSoldOut ? ' disabled title="庫存為 0，無法加入盲盒池"' : ''}>
+                    <span class="bb-name-text">${esc(name)}&nbsp;<small style="opacity:.5">×${qty}</small></span>
                 </div>
                 <div class="bb-weight-row">
                     <span class="bb-weight-row-label">⚖</span>
                     <input type="number" class="bb-pool-weight" min="1" max="9999"
                         value="${weight}" data-prize="${esc(name)}"
-                        ${!isChecked ? 'disabled' : ''}>
+                        ${(!isChecked || isSoldOut) ? 'disabled' : ''}>
                     <div class="bb-weight-bar"><div class="bb-weight-bar-fill" style="width:0%"></div></div>
                     <span class="bb-pct-badge${!isChecked ? ' inactive' : ''}">—</span>
                 </div>
@@ -2806,22 +2831,26 @@ function updateBBCheckedList() {
     if (!listEl) return;
     const currentPrizes = Object.keys(prizeInventory);
     blindBox.checkedPrizes = blindBox.checkedPrizes.filter(n => currentPrizes.includes(n));
+    // Remove soldout prizes from checkedPrizes
+    blindBox.checkedPrizes = blindBox.checkedPrizes.filter(n => (prizeInventory[n] || 0) > 0);
     listEl.innerHTML = currentPrizes.length
         ? currentPrizes.map(name => {
-            const isChecked = blindBox.checkedPrizes.includes(name);
+            const qty       = prizeInventory[name] || 0;
+            const isSoldOut = qty <= 0;
+            const isChecked = !isSoldOut && blindBox.checkedPrizes.includes(name);
             const weight    = Math.max(1, Number((blindBox.checkedWeights || {})[name]) || 1);
             return `
-            <div class="bb-item-card bb-a-card${!isChecked ? ' inactive' : ''}" data-prize="${esc(name)}">
+            <div class="bb-item-card bb-a-card${!isChecked ? ' inactive' : ''}${isSoldOut ? ' soldout' : ''}" data-prize="${esc(name)}">
                 <div class="bb-name-row">
                     <input type="checkbox" class="bb-prize-check" data-prize="${esc(name)}"
-                        ${isChecked ? 'checked' : ''}>
-                    <span class="bb-name-text">${esc(name)}&nbsp;<small style="opacity:.5">×${prizeInventory[name]}</small></span>
+                        ${isChecked ? 'checked' : ''}${isSoldOut ? ' disabled title="庫存為 0，無法加入盲盒池"' : ''}>
+                    <span class="bb-name-text">${esc(name)}&nbsp;<small style="opacity:.5">×${qty}</small></span>
                 </div>
                 <div class="bb-weight-row">
                     <span class="bb-weight-row-label">⚖</span>
                     <input type="number" class="bb-pool-weight" min="1" max="9999"
                         value="${weight}" data-prize="${esc(name)}"
-                        ${!isChecked ? 'disabled' : ''}>
+                        ${(!isChecked || isSoldOut) ? 'disabled' : ''}>
                     <div class="bb-weight-bar"><div class="bb-weight-bar-fill" style="width:0%"></div></div>
                     <span class="bb-pct-badge${!isChecked ? ' inactive' : ''}">—</span>
                 </div>
