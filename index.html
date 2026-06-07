@@ -3119,6 +3119,7 @@ function openBBModal(winnerName, winnerPrize, types) {
     // Reset action bar
     document.getElementById('bbActionBar').style.display = 'none';
     document.getElementById('bbRevealedPrizeName').textContent = '';
+    document.getElementById('bbConfirmDrawBtn').disabled = false;
 
     // Show modal + unlock page so host can interact with tablets
     document.getElementById('bbModal').style.display = 'flex';
