@@ -852,8 +852,8 @@
         .bb-checked-list {
             display:flex; flex-direction:column; gap:0;
             max-height:160px; overflow-y:auto;
-            background:var(--bg-inset); border-radius:6px;
-            padding:6px 8px; border:1px solid var(--border);
+            background:var(--bg-inset); border-radius:0 0 6px 6px;
+            border:1px solid var(--border); border-top:none;
         }
         .bb-checked-list:empty::after {
             content:'（尚無正常獎項）'; font-size:12px; color:var(--text-sub);
@@ -867,24 +867,44 @@
         .bb-checked-item input[type=checkbox] {
             width:13px; height:13px; accent-color:var(--gold); cursor:pointer; flex-shrink:0;
         }
-        .bb-excl-rows { display:flex; flex-direction:column; gap:5px; }
+        .bb-excl-rows { display:flex; flex-direction:column; gap:0; max-height:140px; overflow-y:auto;
+            background:var(--bg-inset); border-radius:0 0 6px 6px;
+            border:1px solid var(--border); border-top:none; }
         .bb-excl-row  { display:flex; gap:4px; align-items:center; }
         .bb-excl-row input[type=text]   { flex:3; }
         .bb-excl-row input[type=number] { flex:1; min-width:40px; }
-        /* Checked-prize rows with weight column */
-        .bb-prize-row {
-            display:flex; align-items:center; gap:5px;
-            font-size:12px; color:var(--text-sub);
-            padding:4px 6px;
-            border-bottom:1px solid rgba(201,151,58,.07);
+        /* ── Pool table (shared by A + B sections) ── */
+        .bb-pool-hdr {
+            display:grid; gap:4px; align-items:center;
+            font-size:9px; color:var(--text-sub); opacity:.65;
+            padding:3px 6px;
+            background:rgba(201,151,58,.05);
+            border:1px solid var(--border); border-radius:6px 6px 0 0;
+            border-bottom:1px solid rgba(201,151,58,.15);
         }
-        .bb-prize-row:last-child { border-bottom:none; }
-        .bb-prize-row input[type=checkbox] {
-            width:13px; height:13px; accent-color:var(--gold); cursor:pointer; flex-shrink:0;
+        /* Section A: [✓ 18px] [name flex] [weight 46px] [pct 52px] */
+        .bb-pool-hdr.bb-a-hdr,
+        .bb-pool-row.bb-a-row  { grid-template-columns: 18px 1fr 46px 52px; }
+        /* Section B: [name flex] [qty 38px] [weight 46px] [pct 52px] [del 18px] */
+        .bb-pool-hdr.bb-b-hdr,
+        .bb-pool-row.bb-b-row  { grid-template-columns: 1fr 38px 46px 52px 18px; }
+        .bb-pool-row {
+            display:grid; gap:4px; align-items:center;
+            padding:4px 6px; font-size:12px; color:var(--text-sub);
+            border-bottom:1px solid rgba(201,151,58,.06);
         }
-        .bb-prize-row-name { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-        .bb-wt-label { font-size:9px; color:var(--text-sub); opacity:.55; white-space:nowrap; flex-shrink:0; }
-        .bb-prize-weight { width:38px; min-width:38px; flex-shrink:0; text-align:center; }
+        .bb-pool-row:last-child { border-bottom:none; }
+        .bb-pool-row input[type=checkbox] {
+            width:13px; height:13px; accent-color:var(--gold); cursor:pointer;
+        }
+        .bb-pool-name { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+        input.bb-pool-weight { width:100%; text-align:center; }
+        .bb-pct-badge {
+            font-size:11px; font-weight:700; color:var(--gold);
+            text-align:right; font-variant-numeric:tabular-nums; white-space:nowrap;
+            transition:color .15s;
+        }
+        .bb-pct-badge.inactive { color:var(--text-sub); opacity:.35; font-weight:400; }
         .bb-lock-btn {
             background:linear-gradient(180deg,#2a1e06 0%,#150e03 100%);
             color:var(--gold-light); border:1px solid rgba(201,151,58,.45);
@@ -2588,27 +2608,30 @@ function renderBBSection() {
     // Remove stale checkedPrizes (prizes that no longer exist)
     blindBox.checkedPrizes = blindBox.checkedPrizes.filter(n => currentPrizes.includes(n));
 
+    // ── Section A rows ──
     const checkedHTML = currentPrizes.length
         ? currentPrizes.map(name => {
             const isChecked = blindBox.checkedPrizes.includes(name);
             const weight    = Math.max(1, Number((blindBox.checkedWeights || {})[name]) || 1);
             return `
-            <div class="bb-prize-row">
+            <div class="bb-pool-row bb-a-row">
                 <input type="checkbox" class="bb-prize-check" data-prize="${esc(name)}"
                     ${isChecked ? 'checked' : ''}>
-                <span class="bb-prize-row-name">${esc(name)}&nbsp;<small style="opacity:.55">×${prizeInventory[name]}</small></span>
-                <span class="bb-wt-label">權重</span>
-                <input type="number" class="bb-prize-weight" min="1" max="999"
+                <span class="bb-pool-name">${esc(name)}&nbsp;<small style="opacity:.5">×${prizeInventory[name]}</small></span>
+                <input type="number" class="bb-pool-weight" min="1" max="9999"
                     value="${weight}" data-prize="${esc(name)}"
                     ${!isChecked ? 'disabled' : ''}>
+                <span class="bb-pct-badge${!isChecked ? ' inactive' : ''}">—</span>
             </div>`;}).join('')
-        : '<div style="font-size:11px;color:var(--text-sub);padding:4px">尚無正常獎項</div>';
+        : '<div style="font-size:11px;color:var(--text-sub);padding:8px 6px">尚無正常獎項</div>';
 
+    // ── Section B rows ──
     const exclusiveHTML = blindBox.exclusives.map((ex, i) => `
-        <div class="bb-excl-row" data-idx="${i}">
-            <input type="text"   class="bb-excl-name"   placeholder="獎名"  value="${esc(ex.name)}">
-            <input type="number" class="bb-excl-qty"    min="1" max="9999" placeholder="數量" value="${ex.qty || 1}">
-            <input type="number" class="bb-excl-weight" min="1" max="999"  placeholder="權重" value="${ex.weight || 1}">
+        <div class="bb-pool-row bb-b-row" data-idx="${i}">
+            <input type="text"   class="bb-excl-name" placeholder="獎名" value="${esc(ex.name)}">
+            <input type="number" class="bb-excl-qty"  min="1" max="9999" value="${ex.qty || 1}">
+            <input type="number" class="bb-pool-weight" min="1" max="9999" value="${ex.weight || 1}">
+            <span class="bb-pct-badge">—</span>
             <button class="btn-del bb-excl-del" type="button" title="移除">✕</button>
         </div>`).join('');
 
@@ -2622,15 +2645,22 @@ function renderBBSection() {
             <div class="bb-config">
                 <div>
                     <span class="bb-sub-label">A. 勾選納入盲盒池的獎項</span>
+                    <div class="bb-pool-hdr bb-a-hdr">
+                        <span></span>
+                        <span>獎項名稱</span>
+                        <span style="text-align:center">權重</span>
+                        <span style="text-align:right">機率</span>
+                    </div>
                     <div class="bb-checked-list" id="bbCheckedList">${checkedHTML}</div>
                 </div>
                 <div>
                     <span class="bb-sub-label">B. 盲盒專屬獎項</span>
-                    <div style="display:flex;gap:4px;font-size:9px;color:var(--text-sub);opacity:.55;padding:0 2px 2px">
-                        <span style="flex:3">獎名</span>
-                        <span style="flex:1;min-width:40px">數量</span>
-                        <span style="flex:1;min-width:40px">權重</span>
-                        <span style="width:22px"></span>
+                    <div class="bb-pool-hdr bb-b-hdr">
+                        <span>獎項名稱</span>
+                        <span style="text-align:center">數量</span>
+                        <span style="text-align:center">權重</span>
+                        <span style="text-align:right">機率</span>
+                        <span></span>
                     </div>
                     <div class="bb-excl-rows" id="bbExclRows">${exclusiveHTML}</div>
                     <button class="btn-ghost" id="bbAddExclBtn" style="margin-top:5px;font-size:12px">＋ 新增專屬獎</button>
@@ -2639,7 +2669,7 @@ function renderBBSection() {
             </div>
         </div>`;
 
-    // ── Event listeners ──
+    // ── Unified event delegation ──
     section.querySelector('#bbToggle').addEventListener('change', e => {
         if (!e.target.checked) {
             blindBox.enabled = false; blindBox.locked = false;
@@ -2648,22 +2678,25 @@ function renderBBSection() {
         }
     });
 
-    // Checkbox toggle: enable/disable weight input + update state
-    section.querySelectorAll('.bb-prize-check').forEach(cb => {
-        cb.addEventListener('change', () => {
-            const row    = cb.closest('.bb-prize-row');
-            const wInput = row?.querySelector('.bb-prize-weight');
-            if (wInput) wInput.disabled = !cb.checked;
-            blindBox.checkedPrizes = Array.from(section.querySelectorAll('.bb-prize-check:checked'))
-                .map(c => c.dataset.prize);
-            collectBBCheckedWeights();
-            saveBBCache();
-        });
+    section.addEventListener('change', e => {
+        if (!e.target.matches('.bb-prize-check')) return;
+        const row = e.target.closest('.bb-a-row');
+        const wInput = row?.querySelector('.bb-pool-weight');
+        if (wInput) wInput.disabled = !e.target.checked;
+        const pct = row?.querySelector('.bb-pct-badge');
+        if (pct) pct.classList.toggle('inactive', !e.target.checked);
+        blindBox.checkedPrizes = Array.from(section.querySelectorAll('.bb-prize-check:checked'))
+            .map(c => c.dataset.prize);
+        collectBBCheckedWeights(); saveBBCache(); recalcBBPct();
     });
 
-    // Weight input for checked prizes
-    section.querySelector('#bbCheckedList')?.addEventListener('input', e => {
-        if (e.target.matches('.bb-prize-weight')) { collectBBCheckedWeights(); saveBBCache(); }
+    section.addEventListener('input', e => {
+        if (e.target.matches('.bb-pool-weight')) {
+            collectBBCheckedWeights(); collectBBExclusives();
+            saveBBCache(); recalcBBPct();
+        } else if (e.target.matches('.bb-excl-name, .bb-excl-qty')) {
+            collectBBExclusives(); saveBBCache();
+        }
     });
 
     section.querySelector('#bbAddExclBtn').addEventListener('click', () => {
@@ -2675,45 +2708,79 @@ function renderBBSection() {
     section.querySelector('#bbExclRows').addEventListener('click', e => {
         const del = e.target.closest('.bb-excl-del');
         if (!del) return;
-        const row = del.closest('.bb-excl-row');
         collectBBExclusives();
-        blindBox.exclusives.splice(Number(row.dataset.idx), 1);
+        const idx = Number(del.closest('.bb-b-row').dataset.idx);
+        blindBox.exclusives.splice(idx, 1);
         saveBBCache(); renderBBSection();
     });
 
-    section.querySelector('#bbExclRows').addEventListener('input', e => {
-        if (e.target.matches('.bb-excl-name, .bb-excl-qty, .bb-excl-weight')) {
-            collectBBExclusives(); saveBBCache();
+    section.querySelector('#bbLockBtn').addEventListener('click', confirmBBConfig);
+
+    // Initialize percentage display
+    recalcBBPct();
+}
+
+// ── Recalculate & display live percentage for all pool items ──
+function recalcBBPct() {
+    let totalW = 0;
+    const items = []; // {el, w}
+
+    // Section A: only checked prizes count
+    document.querySelectorAll('.bb-a-row').forEach(row => {
+        const cb = row.querySelector('.bb-prize-check');
+        const pctEl = row.querySelector('.bb-pct-badge');
+        if (!pctEl) return;
+        if (!cb || !cb.checked) {
+            pctEl.textContent = '—';
+            pctEl.classList.add('inactive');
+            return;
         }
+        const w = Math.max(1, parseInt(row.querySelector('.bb-pool-weight')?.value, 10) || 1);
+        items.push({ pctEl, w });
+        totalW += w;
     });
 
-    section.querySelector('#bbLockBtn').addEventListener('click', confirmBBConfig);
+    // Section B: all exclusive rows contribute
+    document.querySelectorAll('.bb-b-row').forEach(row => {
+        const pctEl = row.querySelector('.bb-pct-badge');
+        if (!pctEl) return;
+        const w = Math.max(1, parseInt(row.querySelector('.bb-pool-weight')?.value, 10) || 1);
+        items.push({ pctEl, w });
+        totalW += w;
+    });
+
+    // Update each badge
+    items.forEach(({ pctEl, w }) => {
+        const pct = totalW > 0 ? (w / totalW * 100) : 0;
+        pctEl.textContent = pct.toFixed(1) + '%';
+        pctEl.classList.remove('inactive');
+    });
 }
 
 function collectBBCheckedWeights() {
     blindBox.checkedWeights = {};
-    document.querySelectorAll('.bb-prize-row').forEach(row => {
+    document.querySelectorAll('.bb-a-row').forEach(row => {
         const cb = row.querySelector('.bb-prize-check');
         if (!cb || !cb.checked) return;
         const name = cb.dataset.prize;
-        const wVal = parseInt(row.querySelector('.bb-prize-weight')?.value, 10);
+        const wVal = parseInt(row.querySelector('.bb-pool-weight')?.value, 10);
         blindBox.checkedWeights[name] = Math.max(1, isNaN(wVal) ? 1 : wVal);
     });
 }
 
 function collectBBExclusives() {
-    const rows = document.querySelectorAll('.bb-excl-row');
     blindBox.exclusives = [];
-    rows.forEach(row => {
-        const name   = row.querySelector('.bb-excl-name').value.trim();
-        const qty    = parseInt(row.querySelector('.bb-excl-qty').value, 10)    || 1;
-        const weight = parseInt(row.querySelector('.bb-excl-weight')?.value, 10) || 1;
+    document.querySelectorAll('.bb-b-row').forEach(row => {
+        const name   = row.querySelector('.bb-excl-name')?.value.trim();
+        const qty    = parseInt(row.querySelector('.bb-excl-qty')?.value, 10)  || 1;
+        const weight = parseInt(row.querySelector('.bb-pool-weight')?.value, 10) || 1;
         if (name) blindBox.exclusives.push({ name, qty, weight });
     });
 }
 
 function updateBBCheckedList() {
-    // Called by syncPrizeTabs() to keep the checked-prize list in sync when prizes change.
+    // Keeps the checked-prize list in sync when prizes change (called from syncPrizeTabs).
+    // renderBBSection() always follows, so this is a lightweight pre-sync.
     if (!blindBox.enabled || blindBox.locked) return;
     const listEl = document.getElementById('bbCheckedList');
     if (!listEl) return;
@@ -2724,31 +2791,36 @@ function updateBBCheckedList() {
             const isChecked = blindBox.checkedPrizes.includes(name);
             const weight    = Math.max(1, Number((blindBox.checkedWeights || {})[name]) || 1);
             return `
-            <div class="bb-prize-row">
+            <div class="bb-pool-row bb-a-row">
                 <input type="checkbox" class="bb-prize-check" data-prize="${esc(name)}"
                     ${isChecked ? 'checked' : ''}>
-                <span class="bb-prize-row-name">${esc(name)}&nbsp;<small style="opacity:.55">×${prizeInventory[name]}</small></span>
-                <span class="bb-wt-label">權重</span>
-                <input type="number" class="bb-prize-weight" min="1" max="999"
+                <span class="bb-pool-name">${esc(name)}&nbsp;<small style="opacity:.5">×${prizeInventory[name]}</small></span>
+                <input type="number" class="bb-pool-weight" min="1" max="9999"
                     value="${weight}" data-prize="${esc(name)}"
                     ${!isChecked ? 'disabled' : ''}>
+                <span class="bb-pct-badge${!isChecked ? ' inactive' : ''}">—</span>
             </div>`;}).join('')
-        : '<div style="font-size:11px;color:var(--text-sub);padding:4px">尚無正常獎項</div>';
+        : '<div style="font-size:11px;color:var(--text-sub);padding:8px 6px">尚無正常獎項</div>';
 
+    // Rewire events for the newly injected rows
     listEl.querySelectorAll('.bb-prize-check').forEach(cb => {
         cb.addEventListener('change', () => {
-            const row    = cb.closest('.bb-prize-row');
-            const wInput = row?.querySelector('.bb-prize-weight');
+            const row    = cb.closest('.bb-a-row');
+            const wInput = row?.querySelector('.bb-pool-weight');
             if (wInput) wInput.disabled = !cb.checked;
+            const pct = row?.querySelector('.bb-pct-badge');
+            if (pct) pct.classList.toggle('inactive', !cb.checked);
             blindBox.checkedPrizes = Array.from(listEl.querySelectorAll('.bb-prize-check:checked'))
                 .map(c => c.dataset.prize);
-            collectBBCheckedWeights();
-            saveBBCache();
+            collectBBCheckedWeights(); saveBBCache(); recalcBBPct();
         });
     });
     listEl.addEventListener('input', e => {
-        if (e.target.matches('.bb-prize-weight')) { collectBBCheckedWeights(); saveBBCache(); }
+        if (e.target.matches('.bb-pool-weight')) {
+            collectBBCheckedWeights(); saveBBCache(); recalcBBPct();
+        }
     });
+    recalcBBPct();
 }
 
 function confirmBBConfig() {
