@@ -2533,13 +2533,15 @@ function buildBBWeightedPool() {
     // Checked normal prizes: available only when qty > 0; repeated by weight
     blindBox.checkedPrizes.forEach(name => {
         if ((prizeInventory[name] || 0) <= 0) return; // exhausted
-        const weight = Math.max(1, Number((blindBox.checkedWeights || {})[name]) || 1);
+        // Cap weight at 9999 in JS (HTML max attr alone can be bypassed via DevTools/localStorage)
+        const weight = Math.min(9999, Math.max(1, Number((blindBox.checkedWeights || {})[name]) || 1));
         for (let i = 0; i < weight; i++) pool.push(name);
     });
     // Exclusive prizes: available only when qty > 0; repeated by weight
     blindBox.exclusives.forEach(ex => {
         if ((Number(ex.qty) || 0) <= 0) return; // exhausted
-        const weight = Math.max(1, Number(ex.weight) || 1);
+        // Cap weight at 9999 — same safety ceiling as checked prizes
+        const weight = Math.min(9999, Math.max(1, Number(ex.weight) || 1));
         for (let i = 0; i < weight; i++) pool.push(ex.name);
     });
     return pool;
@@ -2732,6 +2734,9 @@ function renderBBSection() {
 
     section.addEventListener('input', e => {
         if (e.target.matches('.bb-pool-weight')) {
+            // Clamp displayed value to [1, 9999] immediately so UI matches what will be stored
+            const raw = parseInt(e.target.value, 10);
+            if (!isNaN(raw)) e.target.value = Math.min(9999, Math.max(1, raw));
             collectBBCheckedWeights(); collectBBExclusives();
             saveBBCache(); recalcBBPct();
         } else if (e.target.matches('.bb-excl-name, .bb-excl-qty')) {
@@ -2809,7 +2814,7 @@ function collectBBCheckedWeights() {
         if (!cb?.checked) return;
         const name = cb.dataset.prize;
         const wVal = parseInt(card.querySelector('.bb-pool-weight')?.value, 10);
-        blindBox.checkedWeights[name] = Math.max(1, isNaN(wVal) ? 1 : wVal);
+        blindBox.checkedWeights[name] = Math.min(9999, Math.max(1, isNaN(wVal) ? 1 : wVal));
     });
 }
 
@@ -2819,7 +2824,7 @@ function collectBBExclusives() {
         const name   = card.querySelector('.bb-excl-name')?.value.trim();
         const qty    = parseInt(card.querySelector('.bb-excl-qty')?.value, 10)  || 1;
         const wRaw   = parseInt(card.querySelector('.bb-pool-weight')?.value, 10);
-        const weight = Math.max(1, isNaN(wRaw) ? 1 : wRaw); // consistent with Section A
+        const weight = Math.min(9999, Math.max(1, isNaN(wRaw) ? 1 : wRaw)); // consistent with Section A
         if (name) blindBox.exclusives.push({ name, qty, weight });
     });
 }
@@ -3097,6 +3102,11 @@ function revealOtherBBTablets(clickedIdx) {
 // ── Finalize (anti-spoiler: runs ONLY after host confirms) ────
 function finalizeBBDraw() {
     if (bbPhase !== 'revealed') return;
+    // Immediately lock phase + disable button to prevent any visual double-trigger
+    // (JS is single-threaded so true double-execution can't happen, but UX must be bulletproof)
+    bbPhase = 'finalizing';
+    const confirmBtn = document.getElementById('bbConfirmDrawBtn');
+    if (confirmBtn) confirmBtn.disabled = true;
 
     saveSnapshot();
 
