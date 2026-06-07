@@ -850,8 +850,8 @@
         }
         .bb-config { display:flex; flex-direction:column; gap:10px; margin-top:8px; }
         .bb-checked-list {
-            display:flex; flex-direction:column; gap:3px;
-            max-height:108px; overflow-y:auto;
+            display:flex; flex-direction:column; gap:0;
+            max-height:160px; overflow-y:auto;
             background:var(--bg-inset); border-radius:6px;
             padding:6px 8px; border:1px solid var(--border);
         }
@@ -868,9 +868,23 @@
             width:13px; height:13px; accent-color:var(--gold); cursor:pointer; flex-shrink:0;
         }
         .bb-excl-rows { display:flex; flex-direction:column; gap:5px; }
-        .bb-excl-row  { display:flex; gap:5px; align-items:center; }
+        .bb-excl-row  { display:flex; gap:4px; align-items:center; }
         .bb-excl-row input[type=text]   { flex:3; }
-        .bb-excl-row input[type=number] { flex:1; min-width:48px; }
+        .bb-excl-row input[type=number] { flex:1; min-width:40px; }
+        /* Checked-prize rows with weight column */
+        .bb-prize-row {
+            display:flex; align-items:center; gap:5px;
+            font-size:12px; color:var(--text-sub);
+            padding:4px 6px;
+            border-bottom:1px solid rgba(201,151,58,.07);
+        }
+        .bb-prize-row:last-child { border-bottom:none; }
+        .bb-prize-row input[type=checkbox] {
+            width:13px; height:13px; accent-color:var(--gold); cursor:pointer; flex-shrink:0;
+        }
+        .bb-prize-row-name { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+        .bb-wt-label { font-size:9px; color:var(--text-sub); opacity:.55; white-space:nowrap; flex-shrink:0; }
+        .bb-prize-weight { width:38px; min-width:38px; flex-shrink:0; text-align:center; }
         .bb-lock-btn {
             background:linear-gradient(180deg,#2a1e06 0%,#150e03 100%);
             color:var(--gold-light); border:1px solid rgba(201,151,58,.45);
@@ -1292,10 +1306,11 @@ const BLIND_BOX_PRIZE_ID = '__blindbox__';
 const BB_CACHE_KEY        = 'bh_blindbox';
 
 let blindBox = {
-    enabled:       false,
-    checkedPrizes: [],   // names of normal prizes ticked into pool
-    exclusives:    [],   // [{name, qty}] — exclusive-only prizes
-    locked:        false,
+    enabled:        false,
+    checkedPrizes:  [],   // names of normal prizes ticked into pool
+    checkedWeights: {},   // {[name]: number} — draw weight per checked prize
+    exclusives:     [],   // [{name, qty, weight}] — exclusive-only prizes
+    locked:         false,
 };
 
 // BB runtime (not persisted)
@@ -2447,10 +2462,12 @@ function loadBBCache() {
         if (!raw) return;
         const data = JSON.parse(raw);
         if (data && typeof data === 'object') {
-            blindBox.enabled       = !!data.enabled;
-            blindBox.locked        = !!data.locked;
-            blindBox.checkedPrizes = Array.isArray(data.checkedPrizes) ? data.checkedPrizes : [];
-            blindBox.exclusives    = Array.isArray(data.exclusives)
+            blindBox.enabled        = !!data.enabled;
+            blindBox.locked         = !!data.locked;
+            blindBox.checkedPrizes  = Array.isArray(data.checkedPrizes) ? data.checkedPrizes : [];
+            blindBox.checkedWeights = (data.checkedWeights && typeof data.checkedWeights === 'object')
+                ? data.checkedWeights : {};
+            blindBox.exclusives     = Array.isArray(data.exclusives)
                 ? data.exclusives.filter(e => e && typeof e.name === 'string' && e.name.trim())
                 : [];
         }
@@ -2464,13 +2481,17 @@ function saveBBCache() {
 // ── Pool helpers ───────────────────────────────────────────────
 function buildBBWeightedPool() {
     const pool = [];
+    // Checked normal prizes: available only when qty > 0; repeated by weight
     blindBox.checkedPrizes.forEach(name => {
-        const qty = prizeInventory[name] || 0;
-        for (let i = 0; i < qty; i++) pool.push(name);
+        if ((prizeInventory[name] || 0) <= 0) return; // exhausted
+        const weight = Math.max(1, Number((blindBox.checkedWeights || {})[name]) || 1);
+        for (let i = 0; i < weight; i++) pool.push(name);
     });
+    // Exclusive prizes: available only when qty > 0; repeated by weight
     blindBox.exclusives.forEach(ex => {
-        const qty = Math.max(0, Number(ex.qty) || 0);
-        for (let i = 0; i < qty; i++) pool.push(ex.name);
+        if ((Number(ex.qty) || 0) <= 0) return; // exhausted
+        const weight = Math.max(1, Number(ex.weight) || 1);
+        for (let i = 0; i < weight; i++) pool.push(ex.name);
     });
     return pool;
 }
@@ -2516,8 +2537,19 @@ function renderBBSection() {
 
     // ── Locked (config confirmed) ──
     if (blindBox.locked) {
-        const types    = getBBPrizeTypes();
-        const poolSize = buildBBWeightedPool().length;
+        const types = getBBPrizeTypes();
+        // Build weight map for percentage display
+        const weightMap = {};
+        blindBox.checkedPrizes.forEach(name => {
+            if ((prizeInventory[name] || 0) > 0)
+                weightMap[name] = Math.max(1, Number((blindBox.checkedWeights || {})[name]) || 1);
+        });
+        blindBox.exclusives.forEach(ex => {
+            if (ex.name && (Number(ex.qty) || 0) > 0)
+                weightMap[ex.name] = Math.max(1, Number(ex.weight) || 1);
+        });
+        const totalW = Object.values(weightMap).reduce((s, w) => s + w, 0) || 1;
+
         section.innerHTML = `
             <div>
                 <div class="sec-lbl" style="margin-bottom:6px">🎲 神秘盲盒</div>
@@ -2527,15 +2559,18 @@ function renderBBSection() {
                 </label>
                 <div class="bb-locked-info">
                     <span class="bb-lock-icon">🔒 盲盒已鎖定</span>
-                    <div style="font-size:11px;color:var(--text-sub);margin-bottom:4px">獎品種類（共 ${poolSize} 抽）：</div>
-                    ${types.map(t => `<div class="bb-locked-prize">▸ ${esc(t)}</div>`).join('') || '<div style="font-size:12px;color:var(--text-sub)">（獎池為空）</div>'}
+                    <div style="font-size:11px;color:var(--text-sub);margin-bottom:4px">獎品種類（共 ${types.length} 種，依權重抽取）：</div>
+                    ${types.map(t => {
+                        const w   = weightMap[t] || 1;
+                        const pct = Math.round(w / totalW * 100);
+                        return `<div class="bb-locked-prize">▸ ${esc(t)}&nbsp;<small style="opacity:.55;font-weight:400">${pct}%</small></div>`;
+                    }).join('') || '<div style="font-size:12px;color:var(--text-sub)">（獎池為空）</div>'}
                 </div>
                 <button class="bb-unlock-btn" id="bbUnlockBtn">🔓 解鎖重新設定</button>
             </div>`;
         section.querySelector('#bbToggle').addEventListener('change', e => {
             if (!e.target.checked) {
                 blindBox.enabled = false; blindBox.locked = false;
-                // clear selection if ???  was chosen
                 if (selectedPrize === BLIND_BOX_PRIZE_ID) selectedPrize = '';
                 saveBBCache(); renderBBSection(); syncPrizeTabs();
             }
@@ -2554,18 +2589,26 @@ function renderBBSection() {
     blindBox.checkedPrizes = blindBox.checkedPrizes.filter(n => currentPrizes.includes(n));
 
     const checkedHTML = currentPrizes.length
-        ? currentPrizes.map(name => `
-            <label class="bb-checked-item">
+        ? currentPrizes.map(name => {
+            const isChecked = blindBox.checkedPrizes.includes(name);
+            const weight    = Math.max(1, Number((blindBox.checkedWeights || {})[name]) || 1);
+            return `
+            <div class="bb-prize-row">
                 <input type="checkbox" class="bb-prize-check" data-prize="${esc(name)}"
-                    ${blindBox.checkedPrizes.includes(name) ? 'checked' : ''}>
-                <span>${esc(name)}&nbsp;<small style="opacity:.6">×${prizeInventory[name]}</small></span>
-            </label>`).join('')
+                    ${isChecked ? 'checked' : ''}>
+                <span class="bb-prize-row-name">${esc(name)}&nbsp;<small style="opacity:.55">×${prizeInventory[name]}</small></span>
+                <span class="bb-wt-label">權重</span>
+                <input type="number" class="bb-prize-weight" min="1" max="999"
+                    value="${weight}" data-prize="${esc(name)}"
+                    ${!isChecked ? 'disabled' : ''}>
+            </div>`;}).join('')
         : '<div style="font-size:11px;color:var(--text-sub);padding:4px">尚無正常獎項</div>';
 
     const exclusiveHTML = blindBox.exclusives.map((ex, i) => `
         <div class="bb-excl-row" data-idx="${i}">
-            <input type="text"   class="bb-excl-name" placeholder="專屬獎名" value="${esc(ex.name)}">
-            <input type="number" class="bb-excl-qty"  min="1"   value="${ex.qty || 1}">
+            <input type="text"   class="bb-excl-name"   placeholder="獎名"  value="${esc(ex.name)}">
+            <input type="number" class="bb-excl-qty"    min="1" max="9999" placeholder="數量" value="${ex.qty || 1}">
+            <input type="number" class="bb-excl-weight" min="1" max="999"  placeholder="權重" value="${ex.weight || 1}">
             <button class="btn-del bb-excl-del" type="button" title="移除">✕</button>
         </div>`).join('');
 
@@ -2583,6 +2626,12 @@ function renderBBSection() {
                 </div>
                 <div>
                     <span class="bb-sub-label">B. 盲盒專屬獎項</span>
+                    <div style="display:flex;gap:4px;font-size:9px;color:var(--text-sub);opacity:.55;padding:0 2px 2px">
+                        <span style="flex:3">獎名</span>
+                        <span style="flex:1;min-width:40px">數量</span>
+                        <span style="flex:1;min-width:40px">權重</span>
+                        <span style="width:22px"></span>
+                    </div>
                     <div class="bb-excl-rows" id="bbExclRows">${exclusiveHTML}</div>
                     <button class="btn-ghost" id="bbAddExclBtn" style="margin-top:5px;font-size:12px">＋ 新增專屬獎</button>
                 </div>
@@ -2599,17 +2648,27 @@ function renderBBSection() {
         }
     });
 
+    // Checkbox toggle: enable/disable weight input + update state
     section.querySelectorAll('.bb-prize-check').forEach(cb => {
         cb.addEventListener('change', () => {
+            const row    = cb.closest('.bb-prize-row');
+            const wInput = row?.querySelector('.bb-prize-weight');
+            if (wInput) wInput.disabled = !cb.checked;
             blindBox.checkedPrizes = Array.from(section.querySelectorAll('.bb-prize-check:checked'))
                 .map(c => c.dataset.prize);
+            collectBBCheckedWeights();
             saveBBCache();
         });
     });
 
+    // Weight input for checked prizes
+    section.querySelector('#bbCheckedList')?.addEventListener('input', e => {
+        if (e.target.matches('.bb-prize-weight')) { collectBBCheckedWeights(); saveBBCache(); }
+    });
+
     section.querySelector('#bbAddExclBtn').addEventListener('click', () => {
         collectBBExclusives();
-        blindBox.exclusives.push({ name: '', qty: 1 });
+        blindBox.exclusives.push({ name: '', qty: 1, weight: 1 });
         saveBBCache(); renderBBSection();
     });
 
@@ -2623,7 +2682,7 @@ function renderBBSection() {
     });
 
     section.querySelector('#bbExclRows').addEventListener('input', e => {
-        if (e.target.matches('.bb-excl-name, .bb-excl-qty')) {
+        if (e.target.matches('.bb-excl-name, .bb-excl-qty, .bb-excl-weight')) {
             collectBBExclusives(); saveBBCache();
         }
     });
@@ -2631,43 +2690,70 @@ function renderBBSection() {
     section.querySelector('#bbLockBtn').addEventListener('click', confirmBBConfig);
 }
 
+function collectBBCheckedWeights() {
+    blindBox.checkedWeights = {};
+    document.querySelectorAll('.bb-prize-row').forEach(row => {
+        const cb = row.querySelector('.bb-prize-check');
+        if (!cb || !cb.checked) return;
+        const name = cb.dataset.prize;
+        const wVal = parseInt(row.querySelector('.bb-prize-weight')?.value, 10);
+        blindBox.checkedWeights[name] = Math.max(1, isNaN(wVal) ? 1 : wVal);
+    });
+}
+
 function collectBBExclusives() {
     const rows = document.querySelectorAll('.bb-excl-row');
     blindBox.exclusives = [];
     rows.forEach(row => {
-        const name = row.querySelector('.bb-excl-name').value.trim();
-        const qty  = parseInt(row.querySelector('.bb-excl-qty').value, 10) || 1;
-        if (name) blindBox.exclusives.push({ name, qty });
+        const name   = row.querySelector('.bb-excl-name').value.trim();
+        const qty    = parseInt(row.querySelector('.bb-excl-qty').value, 10)    || 1;
+        const weight = parseInt(row.querySelector('.bb-excl-weight')?.value, 10) || 1;
+        if (name) blindBox.exclusives.push({ name, qty, weight });
     });
 }
 
 function updateBBCheckedList() {
-    // Called by syncPrizeTabs() to keep the checkbox list in sync when prizes change.
+    // Called by syncPrizeTabs() to keep the checked-prize list in sync when prizes change.
     if (!blindBox.enabled || blindBox.locked) return;
     const listEl = document.getElementById('bbCheckedList');
     if (!listEl) return;
     const currentPrizes = Object.keys(prizeInventory);
     blindBox.checkedPrizes = blindBox.checkedPrizes.filter(n => currentPrizes.includes(n));
     listEl.innerHTML = currentPrizes.length
-        ? currentPrizes.map(name => `
-            <label class="bb-checked-item">
+        ? currentPrizes.map(name => {
+            const isChecked = blindBox.checkedPrizes.includes(name);
+            const weight    = Math.max(1, Number((blindBox.checkedWeights || {})[name]) || 1);
+            return `
+            <div class="bb-prize-row">
                 <input type="checkbox" class="bb-prize-check" data-prize="${esc(name)}"
-                    ${blindBox.checkedPrizes.includes(name) ? 'checked' : ''}>
-                <span>${esc(name)}&nbsp;<small style="opacity:.6">×${prizeInventory[name]}</small></span>
-            </label>`).join('')
+                    ${isChecked ? 'checked' : ''}>
+                <span class="bb-prize-row-name">${esc(name)}&nbsp;<small style="opacity:.55">×${prizeInventory[name]}</small></span>
+                <span class="bb-wt-label">權重</span>
+                <input type="number" class="bb-prize-weight" min="1" max="999"
+                    value="${weight}" data-prize="${esc(name)}"
+                    ${!isChecked ? 'disabled' : ''}>
+            </div>`;}).join('')
         : '<div style="font-size:11px;color:var(--text-sub);padding:4px">尚無正常獎項</div>';
 
     listEl.querySelectorAll('.bb-prize-check').forEach(cb => {
         cb.addEventListener('change', () => {
+            const row    = cb.closest('.bb-prize-row');
+            const wInput = row?.querySelector('.bb-prize-weight');
+            if (wInput) wInput.disabled = !cb.checked;
             blindBox.checkedPrizes = Array.from(listEl.querySelectorAll('.bb-prize-check:checked'))
                 .map(c => c.dataset.prize);
+            collectBBCheckedWeights();
             saveBBCache();
         });
+    });
+    listEl.addEventListener('input', e => {
+        if (e.target.matches('.bb-prize-weight')) { collectBBCheckedWeights(); saveBBCache(); }
     });
 }
 
 function confirmBBConfig() {
     collectBBExclusives();
+    collectBBCheckedWeights();
     blindBox.checkedPrizes = Array.from(document.querySelectorAll('.bb-prize-check:checked'))
         .map(c => c.dataset.prize);
 
@@ -2678,7 +2764,7 @@ function confirmBBConfig() {
 
     blindBox.locked = true;
     saveBBCache(); renderBBSection(); syncPrizeTabs();
-    showToast(`🎁 神秘盲盒已鎖定！共 ${types.length} 種、${pool.length} 抽`);
+    showToast(`🎁 神秘盲盒已鎖定！共 ${types.length} 種獎品，依權重抽取`);
 }
 
 // ── Blind Box Draw Orchestration ──────────────────────────────
