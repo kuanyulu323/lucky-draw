@@ -1436,9 +1436,26 @@ function init() {
     document.getElementById('pageLock').addEventListener('click', () => {
         if (awaitingContinue) manualContinue();
     });
+    // BB Modal cancel button
+    document.getElementById('bbCancelBtn').addEventListener('click', () => {
+        if (bbPhase === 'awaiting_flip' || bbPhase === 'revealed') {
+            if (confirm('確定取消本次盲盒抽獎？（中獎記錄不會寫入，已抽獎資源不消耗）')) {
+                closeBBModal();
+            }
+        }
+    });
 }
 
 document.addEventListener('keydown', e => {
+    // ESC closes BB modal when awaiting flip or after reveal (before confirm)
+    if (e.key === 'Escape') {
+        if (bbPhase === 'awaiting_flip' || bbPhase === 'revealed') {
+            if (confirm('確定取消本次盲盒抽獎？（中獎記錄不會寫入，已抽獎資源不消耗）')) {
+                closeBBModal();
+            }
+        }
+        return;
+    }
     if ((e.key === 'k' || e.key === 'K') && (e.ctrlKey || e.metaKey)) {
         e.preventDefault();
         // ── Blind box decoupling: Ctrl+K is completely ignored during any BB phase ──
@@ -1480,7 +1497,7 @@ function parseCacheJSON(key, fallback) {
 function normalizeHistory(list) {
     if (!Array.isArray(list)) return [];
     return list
-        .filter(item => item && typeof item === 'object')
+        .filter(item => item && typeof item === 'object' && !item._fakeDecree)
         .map(item => ({
             prize:     item.prize     || '—',
             realPrize: item.realPrize || '',
@@ -1678,7 +1695,7 @@ function syncPrizeTabs() {
     }
     // Clear blind box prize selection if BB is no longer locked or pool is empty
     if (selectedPrize === BLIND_BOX_PRIZE_ID &&
-        (!blindBox.locked || buildBBWeightedPool().length === 0)) {
+        (!blindBox.locked || buildBBWeightedPool().length === 0 || getBBRemainingDraws() === 0)) {
         selectedPrize = '';
     }
 
@@ -1726,8 +1743,8 @@ function renderTabs() {
     // ── Add "???" blind box tab ──
     if (blindBox.locked) {
         const pool    = buildBBWeightedPool();
-        const bbQty   = pool.length;
-        const soldout = bbQty <= 0;
+        const bbQty   = getBBRemainingDraws(); // actual remaining draw slots, not weighted pool size
+        const soldout = bbQty <= 0 || pool.length === 0;
         const active  = selectedPrize === BLIND_BOX_PRIZE_ID;
         const tab = document.createElement('button');
         tab.type  = 'button';
@@ -1761,9 +1778,8 @@ function selectPrize(name) {
 
 function updateInfoBar() {
     if (selectedPrize === BLIND_BOX_PRIZE_ID) {
-        const pool = buildBBWeightedPool();
         document.getElementById('infoName').textContent = '神秘盲盒 ???';
-        document.getElementById('infoQty').textContent  = pool.length + ' 抽';
+        document.getElementById('infoQty').textContent  = getBBRemainingDraws() + ' 抽';
         return;
     }
     const has = selectedPrize && Object.hasOwn(prizeInventory, selectedPrize);
@@ -1866,7 +1882,7 @@ function startDraw() {
         if (!blindBox.locked) { showToast('盲盒設定未鎖定！'); return; }
         if (bbPhase !== 'idle') return;
         const pool = buildBBWeightedPool();
-        if (!pool.length) { showToast('盲盒獎池已全數抽完！'); return; }
+        if (!pool.length || getBBRemainingDraws() === 0) { showToast('盲盒獎池已全數抽完！'); return; }
         const names = [...new Set(getNames())];
         if (!names.length) { showToast('名單是空的！'); return; }
         startBBDraw();
@@ -1875,8 +1891,6 @@ function startDraw() {
 
     // ── Normal draw path ──
     const names = [...new Set(getNames())];
-    const qty = prizeInventory[selectedPrize] || 0;
-
     if (!names.length) {
         showToast('名單是空的！');
         return;
@@ -1885,6 +1899,7 @@ function startDraw() {
         showToast('請先選擇一個獎項！');
         return;
     }
+    const qty = prizeInventory[selectedPrize] || 0;
     if (qty <= 0) {
         showToast('此獎項已全數抽完！');
         return;
@@ -1896,6 +1911,9 @@ function startDraw() {
     if (autoRemove && names.length < batchCount) {
         showToast('名單人數不足以進行批量抽獎！');
         return;
+    }
+    if (!autoRemove && names.length < batchCount) {
+        showToast('⚠️ 注意：未啟用自動剔除，同一人可能重複中獎');
     }
 
     setDrawingState(true);
@@ -2529,22 +2547,41 @@ function saveBBCache() {
 
 // ── Pool helpers ───────────────────────────────────────────────
 function buildBBWeightedPool() {
+    // Returns [{name, weight}] — lightweight; does NOT materialize a flat repeated array.
+    // Use pickBBPrize(pool) for weighted random selection, getBBRemainingDraws() for counts.
     const pool = [];
-    // Checked normal prizes: available only when qty > 0; repeated by weight
     blindBox.checkedPrizes.forEach(name => {
-        if ((prizeInventory[name] || 0) <= 0) return; // exhausted
-        // Cap weight at 9999 in JS (HTML max attr alone can be bypassed via DevTools/localStorage)
+        if ((prizeInventory[name] || 0) <= 0) return;
         const weight = Math.min(9999, Math.max(1, Number((blindBox.checkedWeights || {})[name]) || 1));
-        for (let i = 0; i < weight; i++) pool.push(name);
+        pool.push({ name, weight });
     });
-    // Exclusive prizes: available only when qty > 0; repeated by weight
     blindBox.exclusives.forEach(ex => {
-        if ((Number(ex.qty) || 0) <= 0) return; // exhausted
-        // Cap weight at 9999 — same safety ceiling as checked prizes
+        if ((Number(ex.qty) || 0) <= 0) return;
         const weight = Math.min(9999, Math.max(1, Number(ex.weight) || 1));
-        for (let i = 0; i < weight; i++) pool.push(ex.name);
+        pool.push({ name: ex.name, weight });
     });
     return pool;
+}
+
+// Weighted random selection from the pool (replaces flat-array index approach).
+function pickBBPrize(pool) {
+    const totalW = pool.reduce((s, e) => s + e.weight, 0);
+    if (!totalW) return null;
+    let r = Math.random() * totalW;
+    for (const e of pool) { r -= e.weight; if (r < 0) return e.name; }
+    return pool[pool.length - 1].name;
+}
+
+// Actual remaining draw count = sum of each prize's qty (not weight).
+function getBBRemainingDraws() {
+    let count = 0;
+    blindBox.checkedPrizes.forEach(name => {
+        count += Math.max(0, prizeInventory[name] || 0);
+    });
+    blindBox.exclusives.forEach(ex => {
+        count += Math.max(0, Number(ex.qty) || 0);
+    });
+    return count;
 }
 
 function getBBPrizeTypes() {
@@ -2769,9 +2806,11 @@ function renderBBSection() {
 function recalcBBPct() {
     let totalW = 0;
     const active = []; // {card, pctEl, barFill, w}
+    const bbSec  = document.getElementById('bbSection');
+    if (!bbSec) return;
 
     // Section A: only checked prizes count
-    document.querySelectorAll('.bb-a-card').forEach(card => {
+    bbSec.querySelectorAll('.bb-a-card').forEach(card => {
         const cb     = card.querySelector('.bb-prize-check');
         const pctEl  = card.querySelector('.bb-pct-badge');
         const barFill = card.querySelector('.bb-weight-bar-fill');
@@ -2789,7 +2828,7 @@ function recalcBBPct() {
     });
 
     // Section B: all exclusive cards contribute
-    document.querySelectorAll('.bb-b-card').forEach(card => {
+    bbSec.querySelectorAll('.bb-b-card').forEach(card => {
         const pctEl  = card.querySelector('.bb-pct-badge');
         const barFill = card.querySelector('.bb-weight-bar-fill');
         if (!pctEl) return;
@@ -2878,19 +2917,26 @@ function updateBBCheckedList() {
             collectBBCheckedWeights(); saveBBCache(); recalcBBPct();
         });
     });
-    listEl.addEventListener('input', e => {
-        if (e.target.matches('.bb-pool-weight')) {
-            collectBBCheckedWeights(); saveBBCache(); recalcBBPct();
-        }
-    });
+    // NOTE: .bb-pool-weight input events are handled by the parent #bbSection delegation
+    // (set up once in renderBBSection). Do NOT add another listener here — it would
+    // accumulate duplicate handlers each time updateBBCheckedList() is called.
     recalcBBPct();
 }
 
 function confirmBBConfig() {
     collectBBExclusives();
     collectBBCheckedWeights();
-    blindBox.checkedPrizes = Array.from(document.querySelectorAll('.bb-prize-check:checked'))
+    const bbSec = document.getElementById('bbSection');
+    blindBox.checkedPrizes = Array.from(bbSec.querySelectorAll('.bb-prize-check:checked'))
         .map(c => c.dataset.prize);
+
+    // Guard against duplicate exclusive prize names (only first match gets qty decremented)
+    const exNames = blindBox.exclusives.map(e => e.name);
+    const dupeEx  = exNames.filter((n, i) => exNames.indexOf(n) !== i);
+    if (dupeEx.length) {
+        showToast(`盲盒專屬獎名稱重複：${dupeEx.slice(0, 2).join('、')}，請修正後再鎖定`);
+        return;
+    }
 
     const types = getBBPrizeTypes();
     if (types.length < 1) { showToast('請至少設定一種盲盒獎品！'); return; }
@@ -2914,8 +2960,7 @@ function startBBDraw() {
     if (!types.length)  { showToast('盲盒無可用獎品種類！'); return; }
 
     // ── Pre-determine winner's prize (the "magic trick" moment) ──
-    const prizeIdx  = Math.floor(Math.random() * pool.length);
-    bbWinnerPrize   = pool[prizeIdx];
+    bbWinnerPrize = pickBBPrize(pool);
 
     // ── Draw winner from name pool ──
     const winnerIdx = Math.floor(Math.random() * names.length);
@@ -3057,6 +3102,7 @@ function spawnBBParticles(refEl) {
     const cx     = rect.left + rect.width  / 2;
     const cy     = rect.top  + rect.height / 2;
     const colors = ['#f0c060','#c9973a','#ffffff','#d42a3a','#ff99aa','#fff7cc'];
+    const created = [];
     for (let i = 0; i < 22; i++) {
         const p     = document.createElement('div');
         const angle = Math.random() * Math.PI * 2;
@@ -3071,8 +3117,12 @@ function spawnBBParticles(refEl) {
             animation:burst .85s ease-out ${(Math.random()*.12).toFixed(2)}s forwards;
             z-index:9999; pointer-events:none;`;
         document.body.appendChild(p);
+        created.push(p);
         p.addEventListener('animationend', () => p.remove(), { once: true });
     }
+    // Fallback: remove any particles that never received animationend
+    // (e.g. when the tab is in the background and animations are throttled).
+    setTimeout(() => created.forEach(p => p.isConnected && p.remove()), 2000);
 }
 
 function revealOtherBBTablets(clickedIdx) {
@@ -3174,6 +3224,13 @@ function closeBBModal() {
 <div id="bbModal" class="bb-modal" style="display:none" role="dialog" aria-modal="true" aria-label="神秘盲盒開獎">
     <div class="bb-modal-inner">
         <div class="bb-top-line"></div>
+        <!-- Cancel / ESC button -->
+        <button id="bbCancelBtn" type="button" title="取消本次盲盒（ESC）"
+            style="position:absolute;top:14px;right:16px;background:none;border:none;
+                   color:var(--text-sub);font-size:20px;cursor:pointer;line-height:1;
+                   padding:4px 8px;border-radius:4px;transition:color .2s;"
+            onmouseover="this.style.color='var(--crimson-lit)'"
+            onmouseout="this.style.color='var(--text-sub)'">✕</button>
         <div class="bb-announce">
             <div class="bb-announce-label">🎁 神秘盲盒開獎</div>
             <div class="bb-announce-winner" id="bbWinnerNameDisplay"></div>
