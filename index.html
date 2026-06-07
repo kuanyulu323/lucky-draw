@@ -2173,11 +2173,10 @@ function runSlotMachine(names, winner, decoy, onComplete) {
     }
 
     const gen = makeGen();
-    const minItems = 55;
-    const rounds = Math.max(4, Math.ceil(minItems / names.length));
     const seq = [];
 
-    const totalMain = rounds * names.length;
+    // Fixed scroll count regardless of participant count — keeps animation ~3-5s for any list size.
+    const totalMain = 35 + Math.floor(Math.random() * 11); // 35~45 items
     for (let i = 0; i < totalMain; i++) seq.push(gen(seq[seq.length - 1]));
 
     // Bridge: ensure the last SAFE_GAP items before stopTarget are all different
