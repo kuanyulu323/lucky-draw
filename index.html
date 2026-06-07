@@ -803,6 +803,28 @@
         .undo-btn:hover:not(:disabled) { color: var(--gold); border-color: rgba(201,151,58,.4); }
         .undo-btn:disabled { opacity: .3; cursor: not-allowed; }
 
+        /* ─── Continue Hint (manual advance after winner reveal) ─── */
+        .continue-hint {
+            position: absolute;
+            bottom: 18px; left: 0; right: 0;
+            text-align: center;
+            font-family: 'Noto Serif TC', serif;
+            font-size: 13px;
+            color: var(--gold);
+            letter-spacing: 3px;
+            opacity: 0;
+            pointer-events: none;
+            animation: continueHintPulse 1.8s ease-in-out .8s infinite;
+        }
+        @keyframes continueHintPulse {
+            0%,100% { opacity: .35; }
+            50%      { opacity: .85; }
+        }
+        .continue-hint.visible {
+            pointer-events: auto;
+            cursor: pointer;
+        }
+
         /* ─── Export Button ─── */
         .btn-export {
             background: transparent;
@@ -1189,6 +1211,7 @@
                     <div class="winner-label">🎉 恭喜中獎</div>
                     <div class="winner-name-text" id="winnerNameText"></div>
                     <div id="winnerPrizeReveal"></div>
+                    <div class="continue-hint" id="continueHint">▶ 點擊繼續 / Space</div>
                 </div>
             </div>
             </div>
@@ -1261,6 +1284,7 @@ let undoStack      = [];
 let redoStack      = [];
 let quickMode      = false;
 let pendingSpecialEvent = null;
+let awaitingContinue    = false;   // true while winner is displayed, waiting for host to advance
 
 // ─── Blind Box State ─────────────────────────────────────────
 const BLIND_BOX_PRIZE_ID = '__blindbox__';
@@ -1338,6 +1362,11 @@ function init() {
 
     updateUndoRedoBtns();
     renderBBSection();   // Initial render — populate #bbSection on page load
+
+    // Click anywhere on the winner display to manually advance (P0-2)
+    document.getElementById('winnerDisplay').addEventListener('click', () => {
+        if (awaitingContinue) manualContinue();
+    });
 }
 
 document.addEventListener('keydown', e => {
@@ -1353,6 +1382,7 @@ document.addEventListener('keydown', e => {
     if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
     if ((e.key === ' ' || e.key === 'Enter') && !isDrawing) {
         e.preventDefault();
+        if (awaitingContinue) { manualContinue(); return; }
         startDraw();
     }
     if ((e.key === 'z' || e.key === 'Z') && (e.ctrlKey || e.metaKey) && !e.shiftKey && !isDrawing) {
@@ -1841,7 +1871,8 @@ function runQuickBatchDraw(count) {
 
     showMultipleWinners(winners, prize);
     setDrawingState(false);
-    resetStageTimer = setTimeout(resetStage, 5000);
+    // Quick batch: short auto-reset (host is moving fast through multiple draws)
+    resetStageTimer = setTimeout(resetStage, 3000);
 }
 
 function showMultipleWinners(winners, prize) {
@@ -1885,7 +1916,8 @@ function showMultipleWinners(winners, prize) {
 function runBatchDraw(remaining, allowSpecial = true) {
     if (remaining === 0) {
         setDrawingState(false);
-        resetStageTimer = setTimeout(resetStage, 5000);
+        // Manual continue: host presses Space/Enter or clicks to dismiss
+        showContinueHint(() => {});
         return;
     }
 
@@ -1925,7 +1957,13 @@ function runBatchDraw(remaining, allowSpecial = true) {
             });
         } else {
             finalizeWinner(names, winnerIdx, winner, decoy, () => {
-                setTimeout(() => runBatchDraw(remaining - 1), quickMode ? 500 : 2000);
+                if (quickMode) {
+                    // Quick mode: auto-advance after short pause
+                    setTimeout(() => runBatchDraw(remaining - 1), 500);
+                } else {
+                    // Normal mode: host manually presses Space/Enter or clicks to advance
+                    showContinueHint(() => runBatchDraw(remaining - 1));
+                }
             });
         }
     });
@@ -2342,12 +2380,34 @@ function setDrawingState(active) {
 }
 
 function resetStage() {
+    awaitingContinue = false;
+    const hint = document.getElementById('continueHint');
+    if (hint) hint.classList.remove('visible');
     document.getElementById('slotReady').style.display = 'flex';
     document.getElementById('slotStrip').style.display = 'none';
     document.getElementById('winnerDisplay').style.display = 'none';
     document.getElementById('winnerPrizeReveal').innerHTML = '';
     document.getElementById('particles').innerHTML = '';
     document.getElementById('winnerDisplay').querySelectorAll('.sword-slash').forEach(el => el.remove());
+}
+
+// Called by Space/Enter or clicking the winner display — advances past the winner screen.
+let _continueCallback = null;
+function showContinueHint(callback) {
+    awaitingContinue  = true;
+    _continueCallback = callback || null;
+    const hint = document.getElementById('continueHint');
+    if (hint) hint.classList.add('visible');
+}
+function manualContinue() {
+    if (!awaitingContinue) return;
+    awaitingContinue  = false;
+    const cb = _continueCallback;
+    _continueCallback = null;
+    const hint = document.getElementById('continueHint');
+    if (hint) hint.classList.remove('visible');
+    resetStage();
+    if (typeof cb === 'function') cb();
 }
 
 // ─── Util ────────────────────────────────────────────────────
@@ -2492,7 +2552,7 @@ function renderBBSection() {
 
     const exclusiveHTML = blindBox.exclusives.map((ex, i) => `
         <div class="bb-excl-row" data-idx="${i}">
-            <input type="text"   class="bb-excl-name" placeholder="獨佔獎名" value="${esc(ex.name)}">
+            <input type="text"   class="bb-excl-name" placeholder="專屬獎名" value="${esc(ex.name)}">
             <input type="number" class="bb-excl-qty"  min="1"   value="${ex.qty || 1}">
             <button class="btn-del bb-excl-del" type="button" title="移除">✕</button>
         </div>`).join('');
