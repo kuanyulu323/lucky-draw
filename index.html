@@ -1337,6 +1337,7 @@ function init() {
     });
 
     updateUndoRedoBtns();
+    renderBBSection();   // Initial render — populate #bbSection on page load
 }
 
 document.addEventListener('keydown', e => {
@@ -1580,9 +1581,11 @@ function syncPrizeTabs() {
     }
 
     updateBBCheckedList();   // keep checkbox list in sync when prizes change
-    // Only re-render full BB section when locked (static summary, no input fields)
-    // — avoids focus-loss while typing in BB config form
-    if (blindBox.locked) renderBBSection();
+    // Re-render BB section: when locked, refreshes the pool-size summary;
+    // when unlocked+enabled, updateBBCheckedList() already handles the checkbox list,
+    // so we only need a full re-render on lock-state transitions (handled inside renderBBSection callers).
+    // Always re-render here to handle cases like enable/disable without full page reload.
+    renderBBSection();
     renderTabs();
     updateInfoBar();
     saveCacheDebounced();
