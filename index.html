@@ -2818,7 +2818,8 @@ function collectBBExclusives() {
     document.querySelectorAll('.bb-b-card').forEach(card => {
         const name   = card.querySelector('.bb-excl-name')?.value.trim();
         const qty    = parseInt(card.querySelector('.bb-excl-qty')?.value, 10)  || 1;
-        const weight = parseInt(card.querySelector('.bb-pool-weight')?.value, 10) || 1;
+        const wRaw   = parseInt(card.querySelector('.bb-pool-weight')?.value, 10);
+        const weight = Math.max(1, isNaN(wRaw) ? 1 : wRaw); // consistent with Section A
         if (name) blindBox.exclusives.push({ name, qty, weight });
     });
 }
@@ -2898,6 +2899,8 @@ function confirmBBConfig() {
 
 // ── Blind Box Draw Orchestration ──────────────────────────────
 function startBBDraw() {
+    // Clear any queued special event so it doesn't leak into the next normal draw
+    pendingSpecialEvent = null;
     const names = [...new Set(getNames())];
     const pool  = buildBBWeightedPool();
     const types = getBBPrizeTypes();
@@ -2919,7 +2922,7 @@ function startBBDraw() {
     // Run slot machine (no intercept, no fake decree during blind box)
     runSlotMachine(names, bbWinnerName, null, () => {
         revealBBWinnerBrief(bbWinnerName, () => {
-            openBBModal(bbWinnerName, bbWinnerPrize, types, names, winnerIdx);
+            openBBModal(bbWinnerName, bbWinnerPrize, types);
         });
     });
 }
@@ -2949,7 +2952,7 @@ function revealBBWinnerBrief(winner, onDone) {
 }
 
 // ── Modal ─────────────────────────────────────────────────────
-function openBBModal(winnerName, winnerPrize, types, names, winnerIdx) {
+function openBBModal(winnerName, winnerPrize, types) {
     bbPhase         = 'awaiting_flip';
     bbClickedTablet = -1;
     bbTabletAssign  = [];
@@ -3007,10 +3010,7 @@ function openBBModal(winnerName, winnerPrize, types, names, winnerIdx) {
     // Keep drawBtn disabled (isDrawing = true) so keyboard shortcuts can't trigger new draw
     // but unlock the page-level pointer-events lock so modal is clickable
     unlockPage();
-
-    // Anti-spoiler: defer name removal + history write until finalizeBBDraw()
-    // Store winnerIdx for later use
-    document.getElementById('bbModal').dataset.winnerIdx = winnerIdx;
+    // Note: winner removal now uses bbWinnerName (name-based), not winnerIdx — no dataset needed
 }
 
 function handleBBTabletClick(idx) {
@@ -3100,13 +3100,14 @@ function finalizeBBDraw() {
 
     saveSnapshot();
 
-    const winnerIdx = parseInt(document.getElementById('bbModal').dataset.winnerIdx || '-1', 10);
-
     // 1. Remove winner from names pool (anti-spoiler: deferred until now)
-    if (autoRemove && winnerIdx !== -1) {
+    // Use name-based lookup (not stale winnerIdx) to guard against textarea edits
+    // that may have occurred while the modal was open.
+    if (autoRemove && bbWinnerName) {
         const ta    = document.getElementById('namesInput');
         const names = getNames();
-        if (winnerIdx < names.length) names.splice(winnerIdx, 1);
+        const nameIdx = names.indexOf(bbWinnerName);
+        if (nameIdx !== -1) names.splice(nameIdx, 1);
         ta.value = names.join('\n');
         updateNameCount(ta.value);
     }
